@@ -1,0 +1,29 @@
+# Node and Build Output
+node_modules/
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# Environment / Secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# AI / Agent Tooling
+.opencode/
+AGENTS.md
+opencode.jsonc
+opencode.jsonc.backup
+
+# Generated AI / Codebase Intelligence
+graphify-out/
+
+# Local Runtime / Temporary Files
+temporary/
+
+# User Uploads
+backend/uploads/
