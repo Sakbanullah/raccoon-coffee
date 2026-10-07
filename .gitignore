@@ -29,3 +29,6 @@ temporary/
 backend/uploads/
 
 docs/
+
+# AI-generated context
+PROJECT_CONTEXT.md
