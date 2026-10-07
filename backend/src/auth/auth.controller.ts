@@ -1,19 +1,16 @@
-import { Controller, Post, Body, Res, Get, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, Res, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentAdmin } from './current-admin.decorator';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() body: any, @Res({ passthrough: true }) res: Response) {
-    if (!body.email || !body.password) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-    
+  async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
     const token = await this.authService.login(body.email, body.password);
     
     // Set HttpOnly cookie
