@@ -26,7 +26,7 @@ export default function AdminLogin() {
         throw new Error("Invalid credentials");
       }
 
-      router.push("/admin/photos");
+      router.push("/admin/raccoon-wall");
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -35,34 +35,34 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20">
-      <h2 className="text-2xl font-display mb-6">Admin Login</h2>
+    <div className="mx-auto mt-20 max-w-md">
+      <h2 className="mb-6 font-display text-2xl text-foreground">Admin Login</h2>
       <form onSubmit={handleLogin} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-navy/30 p-2 rounded bg-cream"
+            className="w-full rounded border border-border bg-input p-2 text-foreground"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
+          <label className="mb-1 block text-sm font-medium text-foreground">Password</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full border border-navy/30 p-2 rounded bg-cream"
+            className="w-full rounded border border-border bg-input p-2 text-foreground"
             required
           />
         </div>
-        {error && <p className="text-red-700 text-sm">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-navy text-cream py-2 rounded font-medium disabled:opacity-50"
+          className="w-full rounded bg-brand-primary py-2 font-medium text-foreground hover:bg-brand-primary-hover disabled:opacity-50"
         >
           {loading ? "Logging in..." : "Login"}
         </button>

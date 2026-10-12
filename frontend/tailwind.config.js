@@ -4,6 +4,25 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // shadcn semantic tokens, mapped onto the Raccoon palette so
+        // components under components/ui style correctly.
+        background: "#171A18",
+        surface: "#222824",
+        "surface-elevated": "#292F2A",
+        "brand-primary": "#025244",
+        "brand-primary-hover": "#036653",
+        "brand-accent": "#B5601B",
+        foreground: "#E8E4DA",
+        "muted-foreground": "#A6ADA6",
+        border: "#39423B",
+        input: "#292F2A",
+        destructive: "#C65D53",
+        // Preserve existing palette for other parts of site
+        primary: { DEFAULT: "#174D3D", foreground: "#F4EBDD" },
+        secondary: { DEFAULT: "#E6D9C5", foreground: "#1F261F" },
+        muted: { DEFAULT: "#E6D9C5", foreground: "#5c6b53" },
+        accent: { DEFAULT: "#E6D9C5", foreground: "#1F261F" },
+        ring: "#C69A4E",
         forest: { DEFAULT: "#174D3D", deep: "#10382D", light: "#1E5A4A" },
         navy: { DEFAULT: "#174D3D", deep: "#10382D", light: "#1E5A4A" },
         cream: { DEFAULT: "#F4EBDD", dark: "#E6D9C5", paper: "#F9F1E3" },

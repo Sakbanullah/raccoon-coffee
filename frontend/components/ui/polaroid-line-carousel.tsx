@@ -1,6 +1,8 @@
 "use client"
 
-import * as React from "react"
+import { useEffect, useState, useRef, useCallback } from "react";
+import type * as React from "react";
+import "./polaroid-line-carousel.css";
 
 export type LandPalette = "dawn" | "alpine" | "dusk" | "mist"
 
@@ -34,6 +36,10 @@ export type PolaroidLineCarouselProps = {
   className?: string
   style?: React.CSSProperties
   ariaLabel?: string
+  /** Render an extra upload card as the final carousel item. */
+  showUploadCard?: boolean
+  onUploadClick?: () => void
+  uploadLabel?: string
 }
 
 /* #region logic */
@@ -206,41 +212,16 @@ const DEFAULT_SLIDES: Slide[] = [
 
 function useSlideImages(slides: Slide[]): string[] {
   const key = slides.map((s) => s.image || (s.palette || "dawn") + ":" + (s.seed ?? 1)).join("|")
-  const [painted, setPainted] = React.useState(() => slides.map(() => ""))
-  React.useEffect(() => {
+  const [painted, setPainted] = useState(() => slides.map(() => ""))
+  useEffect(() => {
     setPainted(slides.map((s, i) => (s.image ? "" : paintLandscape(s.seed ?? i + 1, s.palette || "dawn"))))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
   return slides.map((s, i) => s.image || painted[i] || "")
 }
 
-const PL_CSS = [
-  ".pl-root{position:relative;width:100%;overflow:hidden;background:var(--pl-bg);color:var(--pl-ink);user-select:none;-webkit-user-select:none;touch-action:pan-y;outline:none;cursor:grab}",
-  ".pl-root[data-drag='1']{cursor:grabbing}",
-  ".pl-root:focus-visible{box-shadow:inset 0 0 0 2px var(--pl-ink)}",
-  ".pl-string{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;overflow:visible}",
-  ".pl-card{position:absolute;left:0;top:0;width:var(--pl-cw);transform-origin:50% 0;will-change:transform;cursor:inherit}",
-  ".pl-print{margin-top:10px;background:#fbfaf7;padding:10px 10px 0;box-shadow:0 1px 2px rgba(0,0,0,.12),0 18px 30px -16px rgba(0,0,0,.4);transition:transform .5s cubic-bezier(.2,.7,.2,1),filter .5s ease}",
-  ".pl-card[data-on='0'] .pl-print{transform:scale(.9);filter:saturate(.7) brightness(.96)}",
-  ".pl-shot{position:relative;aspect-ratio:1;overflow:hidden;background:#d9d5cc}",
-  ".pl-shot img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block;pointer-events:none}",
-  ".pl-note{height:46px;display:flex;align-items:center;justify-content:center;padding:0 6px;font:italic 400 15px/1.1 ui-serif,Georgia,'Times New Roman',serif;color:#3b3833;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
-  ".pl-peg{position:absolute;left:50%;top:0;width:10px;height:26px;margin-left:-5px;border-radius:2px;background:linear-gradient(90deg,#c9a67a,#e3c9a1 45%,#b8915f);box-shadow:0 2px 3px rgba(0,0,0,.25)}",
-  ".pl-peg::after{content:'';position:absolute;left:4px;top:8px;width:2px;height:7px;background:rgba(80,60,30,.45);border-radius:1px}",
-  ".pl-bar{position:absolute;left:clamp(16px,4vw,56px);right:clamp(16px,4vw,56px);bottom:clamp(20px,4vh,40px);display:flex;align-items:center;gap:clamp(12px,2vw,24px);cursor:default}",
-  ".pl-cap{flex:1;min-width:0;overflow:hidden;padding-bottom:.15em}",
-  ".pl-cap>*{display:block;animation:pl-in .55s cubic-bezier(.2,.8,.2,1) both}",
-  ".pl-title{font:500 clamp(18px,2.2vw,26px)/1.15 ui-serif,Georgia,'Times New Roman',serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
-  ".pl-sub{margin-top:4px;font:400 13px/1.4 ui-sans-serif,system-ui,sans-serif;color:var(--pl-muted)}",
-  ".pl-count{font:500 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.14em;color:var(--pl-muted)}",
-  ".pl-count b{color:var(--pl-ink);font-weight:500}",
-  ".pl-btn{appearance:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--pl-line);background:transparent;color:inherit;display:grid;place-items:center;cursor:pointer;transition:background .2s ease,color .2s ease}",
-  ".pl-btn:hover{background:var(--pl-ink);color:var(--pl-bg)}",
-  ".pl-btn:focus-visible{outline:2px solid var(--pl-ink);outline-offset:2px}",
-  ".pl-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}",
-  "@keyframes pl-in{from{transform:translateY(100%);opacity:0}to{transform:none;opacity:1}}",
-  "@media (prefers-reduced-motion:reduce){.pl-cap>*{animation:none}.pl-print{transition:none}}",
-].join("\n")
+
+  
 
 export default function PolaroidLineCarousel({
   slides = DEFAULT_SLIDES,
@@ -256,31 +237,36 @@ export default function PolaroidLineCarousel({
   className,
   style,
   ariaLabel = "Image carousel",
+  showUploadCard,
+  onUploadClick,
+  uploadLabel = "Bagikan momenmu",
 }: PolaroidLineCarouselProps) {
-  const n = slides.length
+  const hasUpload = !!showUploadCard
+  const nData = slides.length
+  const n = hasUpload ? nData + 1 : nData
   const srcs = useSlideImages(slides)
-  const [active, setActive] = React.useState(0)
-  const [dragging, setDragging] = React.useState(false)
-  const [size, setSize] = React.useState({ w: 1200, h: 800, cw: cardWidth })
-  const rootRef = React.useRef<HTMLDivElement | null>(null)
-  const pathRef = React.useRef<SVGPathElement | null>(null)
-  const cards = React.useRef<(HTMLDivElement | null)[]>([])
-  const sim = React.useRef({ off: 0, vel: 0, target: 0, a: [] as number[], w: [] as number[] })
-  const drag = React.useRef<null | { x: number; off: number; lx: number; lt: number; v: number; moved: boolean }>(null)
-  const lastTouch = React.useRef(0)
-  const activeRef = React.useRef(0)
-  const opts = React.useRef({ sag, swing })
+  const [active, setActive] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const [size, setSize] = useState({ w: 1200, h: 800, cw: cardWidth })
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const pathRef = useRef<SVGPathElement | null>(null)
+  const cards = useRef<(HTMLDivElement | null)[]>([])
+  const sim = useRef({ off: 0, vel: 0, target: 0, a: [] as number[], w: [] as number[] })
+  const drag = useRef<null | { x: number; off: number; lx: number; lt: number; v: number; moved: boolean }>(null)
+  const lastTouch = useRef(0)
+  const activeRef = useRef(0)
+  const opts = useRef({ sag, swing })
   opts.current = { sag, swing }
 
   const spacing = size.cw * 1.08
-  const goTo = React.useCallback(
+  const goTo = useCallback(
     (i: number) => {
       sim.current.target = clamp(i, 0, n - 1) * spacing
     },
     [n, spacing],
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     const root = rootRef.current
     if (!root) return
     const ro = new ResizeObserver(() => {
@@ -292,16 +278,16 @@ export default function PolaroidLineCarousel({
     return () => ro.disconnect()
   }, [cardWidth])
 
-  React.useEffect(() => {
+  useEffect(() => {
     sim.current.target = activeRef.current * spacing
     sim.current.off = activeRef.current * spacing
   }, [spacing])
 
-  React.useEffect(() => {
+  useEffect(() => {
     onChange?.(active)
   }, [active, onChange])
 
-  React.useEffect(() => {
+  useEffect(() => {
     const root = rootRef.current
     if (!root) return
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -369,7 +355,7 @@ export default function PolaroidLineCarousel({
     }
   }, [size, spacing, n])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!autoplay || n < 2) return
     const t = window.setInterval(() => {
       if (document.hidden || drag.current || performance.now() - lastTouch.current < autoplay) return
@@ -429,6 +415,7 @@ export default function PolaroidLineCarousel({
   }
 
   const s = slides[active] || {}
+  const isUploadActive = hasUpload && active === nData
 
   return (
     <div
@@ -454,7 +441,6 @@ export default function PolaroidLineCarousel({
       onPointerUp={onUp}
       onPointerCancel={onUp}
     >
-      <style>{PL_CSS}</style>
       <svg className="pl-string" aria-hidden="true">
         <path ref={pathRef} fill="none" stroke={string} strokeWidth="1.5" strokeLinecap="round" />
       </svg>
@@ -467,6 +453,15 @@ export default function PolaroidLineCarousel({
           <div className="pl-peg" />
         </div>
       ))}
+      {hasUpload && (
+        <div className="pl-card" data-i={nData} data-on={isUploadActive ? "1" : "0"} onClick={onUploadClick} aria-label={uploadLabel} role="button" tabIndex={0} ref={(el) => void (cards.current[nData] = el)}>
+          <div className="pl-print">
+            <div className="pl-shot" />
+            <div className="pl-note"></div>
+          </div>
+          <div className="pl-peg" />
+        </div>
+      )}
       <div className="pl-bar">
         <div className="pl-cap" key={active} aria-hidden="true">
           {s.title ? <span className="pl-title">{s.title}</span> : null}

@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Reveal from "../ui/Reveal";
+import { ExpandableGallery } from "@/components/ui/gallery-animation";
 
 const ATMOSPHERE_IMAGES = [
   { src: "/images/raccoon/atmosphere/interior.jpg", alt: "Interior of Raccoon Coffee" },
@@ -20,23 +20,10 @@ export default function Atmosphere() {
           <h2 className="eyebrow text-center text-gold">Atmosphere</h2>
         </Reveal>
         <Reveal delay={0.1} className="mt-12">
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {ATMOSPHERE_IMAGES.map((img, idx) => (
-              <div key={img.src} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-forest/10">
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  fill
-                  loading="lazy"
-                  className="object-cover transition-transform duration-1000 hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/80 via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 text-cream">
-                  <p className="text-sm font-medium uppercase tracking-[0.1em]">{img.alt}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ExpandableGallery
+            images={ATMOSPHERE_IMAGES.map((img) => img.src)}
+            className="w-full"
+          />
         </Reveal>
         <Reveal delay={0.15} className="mt-12 text-center">
           <a
