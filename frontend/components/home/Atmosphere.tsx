@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Reveal from "../ui/Reveal";
 
@@ -12,52 +14,38 @@ const ATMOSPHERE_IMAGES = [
 
 export default function Atmosphere() {
   return (
-    <section id="atmosphere" className="bg-cream py-20 text-navy sm:py-28"
-      >
+    <section id="atmosphere" className="relative bg-forest-deep py-20 text-cream sm:py-28 overflow-hidden">
       <div className="section-shell">
         <Reveal>
-          <h2 className="eyebrow text-center">Atmosphere</h2>
+          <h2 className="eyebrow text-center text-gold">Atmosphere</h2>
         </Reveal>
-        <Reveal className="mt-12">
-          <div className="grid gap-8 md:grid-cols-2">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-navy/5">
-              <Image
-                src={ATMOSPHERE_IMAGES[0].src}
-                alt={ATMOSPHERE_IMAGES[0].alt}
-                fill
-                loading="lazy"
-                className="object-cover transition-transform duration-700 hover:scale-105"
-              />
-            </div>
-            <div className="flex flex-col justify-center space-y-4">
-              <h3 className="text-2xl font-display">Warm, intimate, editorial.</h3>
-              <p className="text-base leading-relaxed text-navy/75">
-                Our space invites lingering conversations, soft lighting, and the gentle hum of espresso
-                machines.
-              </p>
-              <a
-                href="#location"
-                className="inline-flex items-center gap-2 border border-navy/30 px-4 py-2 text-sm font-medium text-navy transition-colors hover:border-navy hover:bg-navy hover:text-cream focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-              >
-                Explore the space
-              </a>
-            </div>
-          </div>
-        </Reveal>
-        <Reveal className="mt-12">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {ATMOSPHERE_IMAGES.slice(1).map((img) => (
-              <div key={img.src} className="relative aspect-square overflow-hidden rounded-lg bg-navy/5">
+        <Reveal delay={0.1} className="mt-12">
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {ATMOSPHERE_IMAGES.map((img, idx) => (
+              <div key={img.src} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-forest/10">
                 <Image
                   src={img.src}
                   alt={img.alt}
                   fill
                   loading="lazy"
-                  className="object-cover transition-transform duration-700 hover:scale-105"
+                  className="object-cover transition-transform duration-1000 hover:scale-105"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-forest-deep/80 via-transparent to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 text-cream">
+                  <p className="text-sm font-medium uppercase tracking-[0.1em]">{img.alt}</p>
+                </div>
               </div>
             ))}
           </div>
+        </Reveal>
+        <Reveal delay={0.15} className="mt-12 text-center">
+          <a
+            href="#location"
+            className="group inline-flex items-center gap-3 border border-forest/40 bg-forest px-7 py-3.5 text-sm font-medium tracking-widest text-cream transition-colors hover:border-forest hover:bg-forest-deep hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest"
+          >
+            <span className="font-display text-base leading-none">EXPLORE SPACE</span>
+            <span aria-hidden="true" className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+          </a>
         </Reveal>
       </div>
     </section>

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -35,6 +35,8 @@ export class PhotosService {
   }
 
   async moderatePhoto(photoId: string, status: 'APPROVED' | 'REJECTED', adminId: string) {
+    await this.assertPhotoExists(photoId);
+
     const photo = await this.prisma.photoUpload.update({
       where: { photoId },
       data: {
@@ -44,6 +46,16 @@ export class PhotosService {
       },
     });
     return { data: { ...photo, fileSize: photo.fileSize?.toString() } };
+  }
+
+  private async assertPhotoExists(photoId: string) {
+    const photo = await this.prisma.photoUpload.findUnique({
+      where: { photoId },
+      select: { photoId: true },
+    });
+    if (!photo) {
+      throw new NotFoundException(`Photo ${photoId} not found.`);
+    }
   }
 
   async createPendingUpload(file: Express.Multer.File, visitorName: string, caption?: string) {

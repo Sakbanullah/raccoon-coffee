@@ -1,5 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
+
+const EVENT_PUBLIC_SELECT = {
+  eventId: true,
+  title: true,
+  slug: true,
+  description: true,
+  coverImageUrl: true,
+  eventDate: true,
+  startTime: true,
+  endTime: true,
+  status: true,
+  branchId: true,
+} as const;
 
 @Injectable()
 export class EventsService {
@@ -8,18 +23,86 @@ export class EventsService {
   async findPublished() {
     const events = await this.prisma.event.findMany({
       where: { status: 'PUBLISHED' },
-      select: {
-        eventId: true,
-        title: true,
-        slug: true,
-        description: true,
-        coverImageUrl: true,
-        eventDate: true,
-        startTime: true,
-        status: true,
-      },
+      select: EVENT_PUBLIC_SELECT,
       orderBy: { eventDate: 'desc' },
     });
     return { data: events, meta: { total: events.length } };
+  }
+
+  async findOne(id: string) {
+    const event = await this.prisma.event.findUnique({
+      where: { eventId: id },
+      select: EVENT_PUBLIC_SELECT,
+    });
+    if (!event) {
+      throw new NotFoundException(`Event ${id} not found.`);
+    }
+    return { data: event };
+  }
+
+  async create(dto: CreateEventDto) {
+    if (dto.branchId) {
+      await this.assertBranchExists(dto.branchId);
+    }
+
+    const event = await this.prisma.event.create({
+      data: {
+        title: dto.title,
+        slug: dto.slug,
+        description: dto.description,
+        coverImageUrl: dto.coverImageUrl ?? null,
+        eventDate: new Date(dto.eventDate),
+        startTime: dto.startTime ?? null,
+        endTime: dto.endTime ?? null,
+        status: dto.status ?? 'DRAFT',
+        branchId: dto.branchId ?? null,
+      },
+      select: EVENT_PUBLIC_SELECT,
+    });
+    return { data: event };
+  }
+
+  async update(id: string, dto: UpdateEventDto) {
+    await this.findOne(id);
+
+    if (dto.branchId) {
+      await this.assertBranchExists(dto.branchId);
+    }
+
+    const event = await this.prisma.event.update({
+      where: { eventId: id },
+      data: {
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(dto.slug !== undefined && { slug: dto.slug }),
+        ...(dto.description !== undefined && { description: dto.description }),
+        ...(dto.coverImageUrl !== undefined && { coverImageUrl: dto.coverImageUrl }),
+        ...(dto.eventDate !== undefined && { eventDate: new Date(dto.eventDate) }),
+        ...(dto.startTime !== undefined && { startTime: dto.startTime }),
+        ...(dto.endTime !== undefined && { endTime: dto.endTime }),
+        ...(dto.status !== undefined && { status: dto.status }),
+        ...(dto.branchId !== undefined && { branchId: dto.branchId }),
+      },
+      select: EVENT_PUBLIC_SELECT,
+    });
+    return { data: event };
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    const event = await this.prisma.event.delete({
+      where: { eventId: id },
+      select: EVENT_PUBLIC_SELECT,
+    });
+    return { data: event };
+  }
+
+  private async assertBranchExists(branchId: string) {
+    const branch = await this.prisma.branch.findUnique({
+      where: { branchId },
+      select: { branchId: true },
+    });
+    if (!branch) {
+      throw new BadRequestException('Branch not found.');
+    }
   }
 }

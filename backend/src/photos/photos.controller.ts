@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, UseInterceptors, UploadedFile, Body, Res, Param, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, UseInterceptors, UploadedFile, Body, Res, Param, BadRequestException, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -6,6 +6,7 @@ import { PhotosService } from './photos.service';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentAdmin } from '../auth/current-admin.decorator';
+import { UploadPhotoDto } from './dto/upload-photo.dto';
 
 @Controller('photos')
 export class PhotosController {
@@ -24,13 +25,13 @@ export class PhotosController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id/approve')
-  approvePhoto(@Param('id') id: string, @CurrentAdmin() admin: any) {
+  approvePhoto(@Param('id', ParseUUIDPipe) id: string, @CurrentAdmin() admin: any) {
     return this.service.moderatePhoto(id, 'APPROVED', admin.adminId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id/reject')
-  rejectPhoto(@Param('id') id: string, @CurrentAdmin() admin: any) {
+  rejectPhoto(@Param('id', ParseUUIDPipe) id: string, @CurrentAdmin() admin: any) {
     return this.service.moderatePhoto(id, 'REJECTED', admin.adminId);
   }
 
@@ -56,17 +57,13 @@ export class PhotosController {
   }))
   async uploadPhoto(
     @UploadedFile() file: Express.Multer.File,
-    @Body('visitorName') visitorName: string,
-    @Body('caption') caption?: string,
+    @Body() dto: UploadPhotoDto,
   ) {
     if (!file) {
       throw new BadRequestException('Image file is required.');
     }
-    if (!visitorName) {
-      throw new BadRequestException('Visitor name is required.');
-    }
 
-    return this.service.createPendingUpload(file, visitorName, caption);
+    return this.service.createPendingUpload(file, dto.visitorName, dto.caption);
   }
 
   @Get('uploads/:filename')

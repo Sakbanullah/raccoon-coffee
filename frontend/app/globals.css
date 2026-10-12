@@ -12,15 +12,18 @@ html {
 
 body {
   background-color: theme("colors.cream.DEFAULT");
-  color: theme("colors.navy.DEFAULT");
+  color: theme("colors.ink.DEFAULT");
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
   .reveal {
@@ -32,6 +35,50 @@ body {
 /* Editorial section rhythm helpers, kept deliberately small. */
 .section-shell {
   @apply mx-auto w-full max-w-editorial px-6 sm:px-8 lg:px-12;
+}
+
+/* Wide container for full-bleed editorial bands. */
+.section-wide {
+  @apply mx-auto w-full max-w-[84rem] px-6 sm:px-8 lg:px-12;
+}
+
+/* Torn paper edge, matching the reference mockup's deckle-cut dividers. */
+.torn-top::before,
+.torn-bottom::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 22px;
+  pointer-events: none;
+  background-repeat: repeat-x;
+  background-size: 120px 22px;
+}
+
+.torn-top::before {
+  top: -21px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='22' viewBox='0 0 120 22' preserveAspectRatio='none'%3E%3Cpath d='M0 10 L8 6 L16 12 L24 7 L32 13 L40 8 L48 12 L56 6 L64 12 L72 7 L80 13 L88 8 L96 12 L104 6 L112 12 L120 8 L120 22 L0 22 Z' fill='%23F4EBDD'/%3E%3C/svg%3E");
+}
+
+.torn-bottom::after {
+  bottom: -21px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='22' viewBox='0 0 120 22' preserveAspectRatio='none'%3E%3Cpath d='M0 12 L8 6 L16 14 L24 8 L32 13 L40 7 L48 14 L56 6 L64 13 L72 8 L80 14 L88 7 L96 13 L104 8 L112 14 L120 9 L120 0 L0 0 Z' fill='%23F4EBDD'/%3E%3C/svg%3E");
+}
+
+/* Filled cream variant of the same deckle edge for cream -> dark transitions. */
+.torn-top-dark::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='22' viewBox='0 0 120 22' preserveAspectRatio='none'%3E%3Cpath d='M0 10 L8 6 L16 12 L24 7 L32 13 L40 8 L48 12 L56 6 L64 12 L72 7 L80 13 L88 8 L96 12 L104 6 L112 12 L120 8 L120 22 L0 22 Z' fill='%2310382D'/%3E%3C/svg%3E");
+}
+
+/* Dark deckle edge for dark -> cream transitions. */
+.torn-bottom-dark::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='22' viewBox='0 0 120 22' preserveAspectRatio='none'%3E%3Cpath d='M0 12 L8 6 L16 14 L24 8 L32 13 L40 7 L48 14 L56 6 L64 13 L72 8 L80 14 L88 7 L96 13 L104 8 L112 14 L120 9 L120 0 L0 0 Z' fill='%2310382D'/%3E%3C/svg%3E");
+}
+
+/* Handwritten-style accent used sparingly for editorial notes. */
+.script-note {
+  font-family: "Segoe Script", "Bradley Hand", "Comic Sans MS", cursive;
+  @apply text-cream/90;
 }
 
 .eyebrow {
@@ -49,4 +96,39 @@ body {
 .reveal[data-visible="true"] {
   opacity: 1;
   transform: none;
+}
+
+/* Hero cinematic grade: warm highlights over deep coffee tones. */
+.hero-grade {
+  background:
+    linear-gradient(105deg, rgba(10, 20, 16, 0.92) 0%, rgba(12, 24, 19, 0.72) 38%, rgba(14, 28, 22, 0.28) 62%, rgba(18, 34, 26, 0.55) 100%),
+    radial-gradient(90% 120% at 82% 12%, rgba(198, 154, 78, 0.26) 0%, rgba(198, 154, 78, 0) 55%),
+    radial-gradient(80% 90% at 20% 100%, rgba(9, 18, 14, 0.85) 0%, rgba(9, 18, 14, 0) 60%);
+}
+
+.hero-grade-mobile {
+  background:
+    linear-gradient(180deg, rgba(10, 20, 16, 0.72) 0%, rgba(10, 20, 16, 0.5) 40%, rgba(9, 18, 14, 0.92) 78%, #0A1210 100%),
+    radial-gradient(85% 60% at 70% 10%, rgba(198, 154, 78, 0.24) 0%, rgba(198, 154, 78, 0) 60%);
+}
+
+/* Paper grain used to keep large flat surfaces from feeling sterile. */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
+}
+
+.rule-gold {
+  background-image: linear-gradient(to right, theme("colors.gold.DEFAULT"), rgba(198, 154, 78, 0));
+}
+
+/* Keyboard focus visibility across dark and light sections. */
+:where(a, button, input, textarea, summary):focus-visible {
+  outline: 2px solid theme("colors.gold.DEFAULT");
+  outline-offset: 3px;
 }

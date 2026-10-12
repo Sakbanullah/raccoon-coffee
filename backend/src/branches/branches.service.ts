@@ -1,5 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateBranchDto } from './dto/create-branch.dto';
+import { UpdateBranchDto } from './dto/update-branch.dto';
+
+const BRANCH_SELECT = {
+  branchId: true,
+  name: true,
+  address: true,
+  city: true,
+  province: true,
+  postalCode: true,
+  latitude: true,
+  longitude: true,
+  openingTime: true,
+  closingTime: true,
+  phone: true,
+  mapsUrl: true,
+  isActive: true,
+} as const;
 
 @Injectable()
 export class BranchesService {
@@ -8,17 +26,80 @@ export class BranchesService {
   async findActive() {
     const branches = await this.prisma.branch.findMany({
       where: { isActive: true },
-      select: {
-        branchId: true,
-        name: true,
-        address: true,
-        city: true,
-        openingTime: true,
-        closingTime: true,
-        mapsUrl: true,
-        isActive: true,
-      },
+      select: BRANCH_SELECT,
     });
     return { data: branches, meta: { total: branches.length } };
+  }
+
+  async findAll() {
+    const branches = await this.prisma.branch.findMany({
+      select: BRANCH_SELECT,
+      orderBy: { name: 'asc' },
+    });
+    return { data: branches, meta: { total: branches.length } };
+  }
+
+  async findOne(id: string) {
+    const branch = await this.prisma.branch.findUnique({
+      where: { branchId: id },
+      select: BRANCH_SELECT,
+    });
+    if (!branch) {
+      throw new NotFoundException(`Branch ${id} not found.`);
+    }
+    return { data: branch };
+  }
+
+  async create(dto: CreateBranchDto) {
+    const branch = await this.prisma.branch.create({
+      data: {
+        name: dto.name,
+        address: dto.address,
+        city: dto.city,
+        province: dto.province,
+        postalCode: dto.postalCode ?? null,
+        latitude: dto.latitude ?? null,
+        longitude: dto.longitude ?? null,
+        openingTime: dto.openingTime ?? null,
+        closingTime: dto.closingTime ?? null,
+        phone: dto.phone ?? null,
+        mapsUrl: dto.mapsUrl ?? null,
+        isActive: dto.isActive ?? true,
+      },
+      select: BRANCH_SELECT,
+    });
+    return { data: branch };
+  }
+
+  async update(id: string, dto: UpdateBranchDto) {
+    await this.findOne(id);
+    const branch = await this.prisma.branch.update({
+      where: { branchId: id },
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.address !== undefined && { address: dto.address }),
+        ...(dto.city !== undefined && { city: dto.city }),
+        ...(dto.province !== undefined && { province: dto.province }),
+        ...(dto.postalCode !== undefined && { postalCode: dto.postalCode }),
+        ...(dto.latitude !== undefined && { latitude: dto.latitude }),
+        ...(dto.longitude !== undefined && { longitude: dto.longitude }),
+        ...(dto.openingTime !== undefined && { openingTime: dto.openingTime }),
+        ...(dto.closingTime !== undefined && { closingTime: dto.closingTime }),
+        ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.mapsUrl !== undefined && { mapsUrl: dto.mapsUrl }),
+        ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+      },
+      select: BRANCH_SELECT,
+    });
+    return { data: branch };
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    const branch = await this.prisma.branch.delete({
+      where: { branchId: id },
+      select: BRANCH_SELECT,
+    });
+    return { data: branch };
   }
 }

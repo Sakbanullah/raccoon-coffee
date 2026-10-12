@@ -1,5 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateStoryDto } from './dto/create-story.dto';
+import { UpdateStoryDto } from './dto/update-story.dto';
+
+const STORY_PUBLIC_SELECT = {
+  storyId: true,
+  title: true,
+  slug: true,
+  content: true,
+  coverImageUrl: true,
+  status: true,
+  publishedAt: true,
+  branchId: true,
+} as const;
 
 @Injectable()
 export class StoriesService {
@@ -8,17 +21,82 @@ export class StoriesService {
   async findPublished() {
     const stories = await this.prisma.story.findMany({
       where: { status: 'PUBLISHED' },
-      select: {
-        storyId: true,
-        title: true,
-        slug: true,
-        content: true,
-        coverImageUrl: true,
-        status: true,
-        publishedAt: true,
-      },
+      select: STORY_PUBLIC_SELECT,
       orderBy: { publishedAt: 'desc' },
     });
     return { data: stories, meta: { total: stories.length } };
+  }
+
+  async findOne(id: string) {
+    const story = await this.prisma.story.findUnique({
+      where: { storyId: id },
+      select: STORY_PUBLIC_SELECT,
+    });
+    if (!story) {
+      throw new NotFoundException(`Story ${id} not found.`);
+    }
+    return { data: story };
+  }
+
+  async create(dto: CreateStoryDto) {
+    if (dto.branchId) {
+      await this.assertBranchExists(dto.branchId);
+    }
+
+    const story = await this.prisma.story.create({
+      data: {
+        title: dto.title,
+        slug: dto.slug,
+        content: dto.content,
+        coverImageUrl: dto.coverImageUrl ?? null,
+        status: dto.status ?? 'DRAFT',
+        publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null,
+        branchId: dto.branchId ?? null,
+      },
+      select: STORY_PUBLIC_SELECT,
+    });
+    return { data: story };
+  }
+
+  async update(id: string, dto: UpdateStoryDto) {
+    await this.findOne(id);
+
+    if (dto.branchId) {
+      await this.assertBranchExists(dto.branchId);
+    }
+
+    const story = await this.prisma.story.update({
+      where: { storyId: id },
+      data: {
+        ...(dto.title !== undefined && { title: dto.title }),
+        ...(dto.slug !== undefined && { slug: dto.slug }),
+        ...(dto.content !== undefined && { content: dto.content }),
+        ...(dto.coverImageUrl !== undefined && { coverImageUrl: dto.coverImageUrl }),
+        ...(dto.status !== undefined && { status: dto.status }),
+        ...(dto.publishedAt !== undefined && { publishedAt: dto.publishedAt ? new Date(dto.publishedAt) : null }),
+        ...(dto.branchId !== undefined && { branchId: dto.branchId }),
+      },
+      select: STORY_PUBLIC_SELECT,
+    });
+    return { data: story };
+  }
+
+  async remove(id: string) {
+    await this.findOne(id);
+    const story = await this.prisma.story.delete({
+      where: { storyId: id },
+      select: STORY_PUBLIC_SELECT,
+    });
+    return { data: story };
+  }
+
+  private async assertBranchExists(branchId: string) {
+    const branch = await this.prisma.branch.findUnique({
+      where: { branchId },
+      select: { branchId: true },
+    });
+    if (!branch) {
+      throw new BadRequestException('Branch not found.');
+    }
   }
 }

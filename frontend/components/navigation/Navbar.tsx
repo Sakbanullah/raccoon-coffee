@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 const LINKS = [
   { href: "#menu", label: "Menu" },
   { href: "#story", label: "Story" },
-  { href: "#inside", label: "Inside" },
+  { href: "#atmosphere", label: "Atmosphere" },
+  { href: "#inside", label: "Raccoon Wall" },
   { href: "#location", label: "Location" },
 ];
 
@@ -16,7 +18,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 24);
+    const on = () => setScrolled(window.scrollY > 28);
     on();
     window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
@@ -29,7 +31,7 @@ export default function Navbar() {
     };
   }, [open]);
 
-  const textColor = scrolled ? "text-navy" : "text-cream";
+  const textColor = scrolled ? "text-ink" : "text-cream";
   const hoverColor = scrolled ? "hover:text-coffee" : "hover:text-gold";
 
   return (
@@ -37,47 +39,50 @@ export default function Navbar() {
       className={
         "fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 " +
         (scrolled
-          ? "border-navy/15 bg-cream/95 backdrop-blur-md supports-[backdrop-filter]:bg-cream/85"
-          : "border-transparent bg-gradient-to-b from-navy/80 via-navy/30 to-transparent")
+          ? "border-cream-dark/80 bg-cream/95 backdrop-blur-md supports-[backdrop-filter]:bg-cream/85 shadow-sm"
+          : "border-transparent bg-gradient-to-b from-forest-deep/90 via-forest-deep/30 to-transparent")
       }
     >
-      <div className="section-shell flex h-16 items-center justify-between gap-6 sm:h-[4.25rem]">
+      <div className="section-shell flex h-16 items-center justify-between gap-6 sm:h-[4.5rem]">
         <Link
           href="/"
-          className={`font-display text-lg tracking-tight transition-colors duration-300 sm:text-xl ${textColor}`}
+          className={`group inline-flex items-center gap-3 font-display text-lg tracking-tight transition-colors duration-300 sm:text-xl ${textColor}`}
+          aria-label="Raccoon Coffee & Chill - Home"
         >
+          {/* Logo brand image */}
+          <Image src="/images/logo.svg" alt="Raccoon Coffee logo" width={32} height={32} className="object-contain" />
           <span className="inline-flex items-baseline gap-2">
             Raccoon
-            <span className={`text-sm font-normal uppercase tracking-[0.28em] ${scrolled ? "text-coffee" : "text-gold"}`}>
-              Coffee
+            <span className={`text-[10px] font-medium uppercase tracking-[0.3em] ${scrolled ? "text-coffee" : "text-gold"}`}>
+              Coffee & Chill
             </span>
           </span>
         </Link>
 
-        <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
+        <nav aria-label="Primary" className="hidden items-center gap-8 lg:flex">
           {LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className={`group relative py-2 text-sm tracking-wide transition-colors duration-200 ${textColor} ${hoverColor}`}
+              className={`group relative py-2 text-xs font-medium uppercase tracking-[0.16em] transition-colors duration-200 ${textColor} ${hoverColor}`}
             >
               {l.label}
               <span
                 aria-hidden="true"
-                className={`absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 transition-transform duration-200 group-hover:scale-x-100 ${scrolled ? "bg-navy" : "bg-cream"}`}
+                className={`absolute inset-x-0 -bottom-0.5 h-px origin-left scale-x-0 transition-transform duration-200 group-hover:scale-x-100 ${scrolled ? "bg-coffee" : "bg-gold"}`}
               />
             </Link>
           ))}
           <Link
             href="#location"
             className={
-              "ml-2 px-5 py-2.5 text-xs font-medium uppercase tracking-[0.14em] transition-colors duration-200 " +
+              "ml-2 rounded-sm px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200 shadow-sm " +
               (scrolled
-                ? "bg-navy text-cream hover:bg-navy-light"
-                : "bg-gold text-navy hover:bg-cream")
+                ? "bg-forest text-cream hover:bg-forest-light"
+                : "bg-gold text-forest-deep hover:bg-cream")
             }
           >
-            Visit
+            Visit Us
           </Link>
         </nav>
 
@@ -87,27 +92,27 @@ export default function Navbar() {
           aria-controls="mobile-nav"
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-sm transition-colors md:hidden ${scrolled ? "text-navy hover:bg-navy/5" : "text-cream hover:bg-cream/10"}`}
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-sm transition-colors lg:hidden ${scrolled ? "text-ink hover:bg-ink/5" : "text-cream hover:bg-cream/10"}`}
         >
           <span className="relative flex h-[14px] w-[18px] flex-col justify-between">
             <span
               className={
                 "block h-px w-full origin-center transition-all duration-300 " +
-                (scrolled ? "bg-navy" : "bg-cream") +
+                (scrolled ? "bg-ink" : "bg-cream") +
                 (open ? " translate-y-[6.5px] rotate-45" : "")
               }
             />
             <span
               className={
                 "block h-px w-full transition-opacity duration-200 " +
-                (scrolled ? "bg-navy" : "bg-cream") +
+                (scrolled ? "bg-ink" : "bg-cream") +
                 (open ? " opacity-0" : " opacity-100")
               }
             />
             <span
               className={
                 "block h-px w-full origin-center transition-all duration-300 " +
-                (scrolled ? "bg-navy" : "bg-cream") +
+                (scrolled ? "bg-ink" : "bg-cream") +
                 (open ? " -translate-y-[6.5px] -rotate-45" : "")
               }
             />
@@ -124,39 +129,39 @@ export default function Navbar() {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden border-t border-navy/10 bg-cream text-navy md:hidden"
+            className="overflow-hidden border-t border-cream-dark bg-cream text-ink lg:hidden shadow-xl"
           >
-            <ul className="section-shell flex flex-col py-6">
+            <ul className="section-shell flex flex-col py-8 space-y-2">
               {LINKS.map((l, i) => (
                 <motion.li
                   key={l.href}
-                  initial={{ opacity: 0, x: -8 }}
+                  initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -8 }}
+                  exit={{ opacity: 0, x: -12 }}
                   transition={{ delay: i * 0.04, duration: 0.25 }}
                 >
                   <Link
                     href={l.href}
                     onClick={() => setOpen(false)}
-                    className="block py-3 font-display text-lg text-navy transition-colors hover:text-coffee"
+                    className="block py-2.5 font-display text-2xl text-ink transition-colors hover:text-coffee"
                   >
                     {l.label}
                   </Link>
                 </motion.li>
               ))}
               <motion.li
-                initial={{ opacity: 0, x: -8 }}
+                initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ delay: 0.22, duration: 0.25 }}
-                className="pt-4"
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ delay: 0.25, duration: 0.25 }}
+                className="pt-6"
               >
                 <Link
                   href="#location"
                   onClick={() => setOpen(false)}
-                  className="block bg-navy px-5 py-3 text-center text-sm font-medium uppercase tracking-[0.14em] text-cream"
+                  className="block rounded-sm bg-forest px-6 py-3.5 text-center text-xs font-semibold uppercase tracking-[0.18em] text-cream shadow-md transition-colors hover:bg-forest-light"
                 >
-                  Visit Raccoon
+                  Visit Raccoon Coffee
                 </Link>
               </motion.li>
             </ul>

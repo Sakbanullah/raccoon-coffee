@@ -2,6 +2,22 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const BRANCHES = [
+  {
+    branchId: 'branch-baturaja-01',
+    name: 'Raccoon Coffee Baturaja',
+    address: 'Bakung, Baturaja',
+    city: 'Baturaja',
+    province: 'Sumatera Selatan',
+    postalCode: null,
+    openingTime: new Date('1970-01-01T13:00:00.000Z'),
+    closingTime: new Date('1970-01-01T23:00:00.000Z'),
+    phone: null,
+    mapsUrl: 'https://maps.google.com/?q=Raccoon+Coffee+Baturaja',
+    isActive: true,
+  },
+];
+
 const CATEGORIES = [
   { categoryId: 'cat-coffee', name: 'Kopi Susu & Espresso', slug: 'kopi-susu-espresso', displayOrder: 1 },
   { categoryId: 'cat-milk', name: 'Milky Beverages', slug: 'milky-beverages', displayOrder: 2 },
@@ -155,6 +171,25 @@ async function main() {
     });
   }
 
+  for (const branch of BRANCHES) {
+    await prisma.branch.upsert({
+      where: { branchId: branch.branchId },
+      update: {
+        name: branch.name,
+        address: branch.address,
+        city: branch.city,
+        province: branch.province,
+        postalCode: branch.postalCode,
+        openingTime: branch.openingTime,
+        closingTime: branch.closingTime,
+        phone: branch.phone,
+        mapsUrl: branch.mapsUrl,
+        isActive: branch.isActive,
+      },
+      create: branch,
+    });
+  }
+
   for (const cat of CATEGORIES) {
     await prisma.productCategory.upsert({
       where: { categoryId: cat.categoryId },
@@ -238,7 +273,7 @@ async function main() {
     });
   }
 
-  console.log(`Seeded ${CATEGORIES.length} categories, ${PRODUCTS.length} products, ${STORIES.length} stories, ${EVENTS.length} events, and ${PHOTOS.length} photos.`);
+  console.log(`Seeded ${BRANCHES.length} branches, ${CATEGORIES.length} categories, ${PRODUCTS.length} products, ${STORIES.length} stories, ${EVENTS.length} events, and ${PHOTOS.length} photos.`);
 }
 
 main()
