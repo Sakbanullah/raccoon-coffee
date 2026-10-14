@@ -93,7 +93,13 @@ function UploadModal({ onClose }: { onClose: () => void }) {
       if (e.key === "Escape" && !submitting) onClose();
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    // Lock background scroll while the dialog is open.
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [onClose, submitting]);
 
   const handleFilesChange = (newFiles: File[]) => {
@@ -140,18 +146,18 @@ function UploadModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm" onClick={() => !submitting && onClose()} role="dialog" aria-modal="true" aria-label="Bagikan momenmu">
-      <motion.div initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} onClick={(e) => e.stopPropagation()} className="relative w-full max-w-md overflow-hidden rounded-[10px] border border-navy/15 bg-cream p-6 text-navy shadow-[0_30px_60px_-30px_rgba(16,27,45,0.6)] sm:p-8">
-        <button type="button" onClick={() => !submitting && onClose()} aria-label="Tutup" className="absolute right-4 top-4 text-navy/50 transition-colors hover:text-navy">✕</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-3 backdrop-blur-sm sm:p-4" onClick={() => !submitting && onClose()} role="dialog" aria-modal="true" aria-label="Bagikan momenmu">
+      <motion.div initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} onClick={(e) => e.stopPropagation()} className="relative max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-[10px] border border-navy/15 bg-cream p-5 text-navy shadow-[0_30px_60px_-30px_rgba(16,27,45,0.6)] sm:p-8">
+        <button type="button" onClick={() => !submitting && onClose()} aria-label="Tutup" className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full text-navy/50 transition-colors hover:bg-navy/5 hover:text-navy sm:right-3 sm:top-3">✕</button>
         {success ? (
           <div className="py-6 text-center">
             <p className="font-display text-2xl">Terima kasih!</p>
-            <p className="mt-3 text-sm text-navy/75">Your photo has been submitted for review.</p>
+            <p className="mt-3 text-sm text-navy/75">Fotomu sudah dikirim dan akan tampil setelah ditinjau admin.</p>
             <button type="button" onClick={onClose} className="mt-8 inline-flex items-center gap-2 border border-navy bg-navy px-6 py-3 text-sm font-medium tracking-wide text-cream transition-colors hover:bg-coffee hover:border-coffee">Selesai</button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <h3 className="font-display text-2xl">Bagikan Momenmu</h3>
+            <h3 className="pr-8 font-display text-2xl">Bagikan Momenmu</h3>
             <p className="text-sm text-navy/70">Kirim fotomu di Raccoon Coffee. Foto akan tampil setelah ditinjau admin.</p>
             <FileUploadCard files={files} onFilesChange={handleFilesChange} onFileRemove={handleFileRemove} />
             <div>
@@ -178,6 +184,7 @@ function UploadModal({ onClose }: { onClose: () => void }) {
             </div>
             {error && <p className="text-sm text-red-700">{error}</p>}
             <button type="submit" disabled={submitting || !consent} className="w-full border border-navy bg-navy py-3 text-sm font-medium tracking-wide text-cream transition-colors hover:bg-coffee hover:border-coffee disabled:cursor-not-allowed disabled:opacity-60">{submitting ? "Mengunggah…" : "Kirim untuk ditinjau"}</button>
+            {!consent && <p className="text-center text-xs text-navy/60">Centang persetujuan di atas untuk mengirim.</p>}
           </form>
         )}
       </motion.div>

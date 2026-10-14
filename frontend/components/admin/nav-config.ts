@@ -7,7 +7,9 @@ import {
   CalendarDays,
   Newspaper,
   Image as Images,
+  ImagePlus,
   Settings,
+  Eye,
 } from "lucide-react";
 
 export interface NavItem {
@@ -29,6 +31,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { label: "Products", href: "/admin/products", icon: Package },
       { label: "Categories", href: "/admin/categories", icon: Tags },
+      { label: "Display Settings", href: "/admin/menu-display", icon: Eye },
     ],
   },
   { items: [{ label: "Branches", href: "/admin/branches", icon: MapPin }] },
@@ -37,6 +40,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { label: "Events", href: "/admin/events", icon: CalendarDays },
       { label: "Stories", href: "/admin/stories", icon: Newspaper },
+      { label: "Site Images", href: "/admin/site-images", icon: ImagePlus },
     ],
   },
   { items: [{ label: "Raccoon Wall", href: "/admin/raccoon-wall", icon: Images }] },

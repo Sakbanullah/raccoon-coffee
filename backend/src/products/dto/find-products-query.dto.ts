@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class FindProductsQueryDto {
   /** ProductCategory.categoryId (uuid CHAR(36)) */
@@ -6,4 +6,9 @@ export class FindProductsQueryDto {
   @IsString()
   @MaxLength(36)
   category?: string;
+
+  /** 'true' limits results to ACTIVE + visible products (public website). */
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  public?: string;
 }

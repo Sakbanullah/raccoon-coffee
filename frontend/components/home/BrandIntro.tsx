@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import Reveal from "../ui/Reveal";
+import type { SiteImage } from "@/types";
 
-export default function BrandIntro() {
+export default function BrandIntro({ images }: { images: SiteImage[] }) {
+  const primary = images.find((i) => i.slotKey === "primary");
+  const secondary = images.find((i) => i.slotKey === "secondary");
   return (
     <section id="story" className="relative bg-cream text-ink py-24 sm:py-32 overflow-hidden torn-bottom">
       <div className="section-shell grid md:grid-cols-12 items-center gap-12 lg:gap-16">
@@ -30,8 +33,8 @@ export default function BrandIntro() {
         <div className="relative md:col-span-5 h-[420px] sm:h-[480px]">
           <div className="absolute inset-x-4 top-4 h-[320px] sm:h-[380px] rounded-lg overflow-hidden shadow-2xl rotate-1 transition-transform duration-500 hover:rotate-0">
             <Image
-              src="/images/raccoon/atmosphere/interior.jpg"
-              alt="Raccoon interior atmosphere"
+              src={primary?.imageUrl ?? "/images/raccoon/atmosphere/interior.jpg"}
+              alt={primary?.altText || "Raccoon interior atmosphere"}
               fill
               className="object-cover"
             />
@@ -40,8 +43,8 @@ export default function BrandIntro() {
           <div className="absolute -bottom-6 left-6 w-48 sm:w-56 bg-cream p-3 pb-8 rounded shadow-xl -rotate-3 border border-ink/10 hidden sm:block">
             <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-forest/10">
               <Image
-                src="/images/raccoon/atmosphere/barista.jpg"
-                alt="Barista at Raccoon"
+                src={secondary?.imageUrl ?? "/images/raccoon/atmosphere/barista.jpg"}
+                alt={secondary?.altText || "Barista at Raccoon"}
                 fill
                 className="object-cover"
               />

@@ -1,4 +1,5 @@
 import { Controller, Post, Body, Res, Get, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { Response } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -10,6 +11,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  // Rate limit: max 5 login attempts per minute per IP (throttle credential stuffing).
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
     const token = await this.authService.login(body.email, body.password);
     

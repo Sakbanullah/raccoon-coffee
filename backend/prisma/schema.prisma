@@ -89,18 +89,20 @@ model ProductCategory {
 }
 
 model Product {
-  productId    String        @id @default(uuid()) @map("product_id") @db.Char(36)
-  categoryId   String        @map("category_id") @db.Char(36)
-  branchId     String?       @map("branch_id") @db.Char(36)
-  name         String        @db.VarChar(255)
-  slug         String        @unique @db.VarChar(255)
-  description  String?       @db.Text
-  price        Decimal       @db.Decimal(10, 2)
-  imageUrl     String?       @map("image_url") @db.VarChar(500)
-  status       ProductStatus @default(ACTIVE)
-  displayOrder Int           @default(0) @map("display_order")
-  createdAt    DateTime      @default(now()) @map("created_at") @db.DateTime()
-  updatedAt    DateTime      @updatedAt @map("updated_at") @db.DateTime()
+  productId     String        @id @default(uuid()) @map("product_id") @db.Char(36)
+  categoryId    String        @map("category_id") @db.Char(36)
+  branchId      String?       @map("branch_id") @db.Char(36)
+  name          String        @db.VarChar(255)
+  slug          String        @unique @db.VarChar(255)
+  description   String?       @db.Text
+  price         Decimal       @db.Decimal(10, 2)
+  imageUrl      String?       @map("image_url") @db.VarChar(500)
+  status        ProductStatus @default(ACTIVE)
+  isVisible     Boolean       @default(true) @map("is_visible")
+  isBestSeller  Boolean       @default(false) @map("is_best_seller")
+  displayOrder  Int           @default(0) @map("display_order")
+  createdAt     DateTime      @default(now()) @map("created_at") @db.DateTime()
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.DateTime()
 
   category ProductCategory @relation(fields: [categoryId], references: [categoryId])
   branch   Branch?         @relation(fields: [branchId], references: [branchId])
@@ -109,6 +111,7 @@ model Product {
   @@index([branchId])
   @@index([status])
   @@index([displayOrder])
+  @@index([isVisible])
   @@map("product")
 }
 
@@ -179,4 +182,35 @@ model PhotoUpload {
   @@index([createdAt])
   @@index([reviewedByAdminId])
   @@map("photo_upload")
+}
+
+// Section-based landing page image configuration. Authorization for this eighth
+// entity is recorded in Decisions.md ("Website Content Images - SiteImage") and
+// Database.md ("Entity: SiteImage").
+model SiteImage {
+  siteImageId  String   @id @default(uuid()) @map("site_image_id") @db.Char(36)
+  sectionKey   String   @map("section_key") @db.VarChar(50)
+  slotKey      String   @map("slot_key") @db.VarChar(50)
+  imageUrl     String   @map("image_url") @db.VarChar(500)
+  altText      String?  @map("alt_text") @db.VarChar(255)
+  displayOrder Int      @default(0) @map("display_order")
+  isVisible    Boolean  @default(true) @map("is_visible")
+  createdAt    DateTime @default(now()) @map("created_at") @db.DateTime()
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.DateTime()
+
+  // NOTE: `single_slot_key` (a MySQL 8 STORED generated column backing the
+  // `site_image_single_slot_uq` single-slot uniqueness index) exists in the
+  // `site_image` table but is deliberately NOT represented here. Prisma 6.19.0
+  // cannot model MySQL generated columns: any schema annotation renders it as a
+  // plain column with a DEFAULT expression, which is semantically wrong. The
+  // column and its unique index live exclusively in migration
+  // 20261015000000_add_site_image. Never run `prisma migrate dev` or `db push`
+  // against this database without manually reconciling that column and index.
+  // See AI-Memory Decisions.md ("SiteImage Single-Slot Uniqueness").
+
+  // Covers the two real read patterns: public lists (section + is_visible) and
+  // admin lists (section only), both ordered by display_order.
+  @@index([sectionKey, isVisible, displayOrder])
+  @@index([sectionKey, slotKey])
+  @@map("site_image")
 }

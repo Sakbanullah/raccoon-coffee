@@ -1,5 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
+import { UPLOAD_DIR, uploadedFilenamePattern } from '../uploads/upload.config';
 
 @Injectable()
 export class PhotosService {
@@ -34,6 +37,22 @@ export class PhotosService {
     return { data: photos, meta: { total: photos.length } };
   }
 
+  async findApprovedForAdmin() {
+    const photos = await this.prisma.photoUpload.findMany({
+      where: { status: 'APPROVED' },
+      select: {
+        photoId: true,
+        visitorName: true,
+        caption: true,
+        imageUrl: true,
+        createdAt: true,
+        reviewedAt: true,
+      },
+      orderBy: { reviewedAt: 'desc' },
+    });
+    return { data: photos, meta: { total: photos.length } };
+  }
+
   async moderatePhoto(photoId: string, status: 'APPROVED' | 'REJECTED', adminId: string) {
     await this.assertPhotoExists(photoId);
 
@@ -46,6 +65,30 @@ export class PhotosService {
       },
     });
     return { data: { ...photo, fileSize: photo.fileSize?.toString() } };
+  }
+
+  async removePhoto(photoId: string) {
+    const photo = await this.prisma.photoUpload.findUnique({
+      where: { photoId },
+      select: { photoId: true, imageUrl: true },
+    });
+    if (!photo) {
+      throw new NotFoundException(`Photo ${photoId} not found.`);
+    }
+
+    await this.prisma.photoUpload.delete({ where: { photoId } });
+
+    // Only files served from the upload route are owned by the backend. Legacy records point at
+    // frontend static assets (/images/...) and must never be unlinked from UPLOAD_DIR.
+    // Best-effort: a missing file (ENOENT) must not block removal of the record that is already gone.
+    const prefix = '/api/photos/uploads/';
+    if (photo.imageUrl.startsWith(prefix)) {
+      const filename = photo.imageUrl.slice(prefix.length);
+      if (uploadedFilenamePattern('wall').test(filename)) {
+        await unlink(join(UPLOAD_DIR, filename)).catch(() => undefined);
+      }
+    }
+    return { data: { photoId } };
   }
 
   private async assertPhotoExists(photoId: string) {

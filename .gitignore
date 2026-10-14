@@ -15,18 +15,35 @@ build/
 
 # AI / Agent Tooling
 .opencode/
+.claude/
 AGENTS.md
 opencode.jsonc
 opencode.jsonc.backup
 
 # Generated AI / Codebase Intelligence
 graphify-out/
+*.graph.json
+*.graphdb
 
 # Local Runtime / Temporary Files
 temporary/
+tmp/
+*.tmp
+*.temp
+scratch/
+
+# Machine-specific / private local configuration
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+.secrets/
+credentials.json
 
 # User Uploads
 backend/uploads/
+uploads/
 
 docs/
 

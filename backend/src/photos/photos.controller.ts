@@ -1,12 +1,11 @@
-import { Controller, Get, Post, Patch, UseInterceptors, UploadedFile, Body, Res, Param, BadRequestException, UseGuards, ParseUUIDPipe } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { Controller, Get, Post, Patch, Delete, UploadedFile, Body, Res, Param, BadRequestException, UseGuards, ParseUUIDPipe, UseInterceptors } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { PhotosService } from './photos.service';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentAdmin } from '../auth/current-admin.decorator';
 import { UploadPhotoDto } from './dto/upload-photo.dto';
+import { UPLOAD_DIR, imageUploadInterceptor, uploadedFilenamePattern } from '../uploads/upload.config';
 
 @Controller('photos')
 export class PhotosController {
@@ -24,6 +23,23 @@ export class PhotosController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('approved')
+  findApprovedForAdmin() {
+    return this.service.findApprovedForAdmin();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  removePhoto(@Param('id') id: string) {
+    // Legacy seeded photos use non-UUID ids (e.g. "photo-1"), so UUID-only validation would reject them.
+    // Accept the Char(36) id shape; unknown ids still return 404 from the service.
+    if (!/^[A-Za-z0-9-]{1,36}$/.test(id)) {
+      throw new BadRequestException('Invalid photo id.');
+    }
+    return this.service.removePhoto(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Patch(':id/approve')
   approvePhoto(@Param('id', ParseUUIDPipe) id: string, @CurrentAdmin() admin: any) {
     return this.service.moderatePhoto(id, 'APPROVED', admin.adminId);
@@ -36,25 +52,9 @@ export class PhotosController {
   }
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('image', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const ext = extname(file.originalname);
-        callback(null, `wall-${uniqueSuffix}${ext}`);
-      }
-    }),
-    fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-        return callback(new BadRequestException('Only image files are allowed!'), false);
-      }
-      callback(null, true);
-    },
-    limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB limit
-    },
-  }))
+  // Rate limit: max 5 uploads per minute per IP (per-route bucket).
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @UseInterceptors(imageUploadInterceptor('wall'))
   async uploadPhoto(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadPhotoDto,
@@ -67,7 +67,16 @@ export class PhotosController {
   }
 
   @Get('uploads/:filename')
+  // Prevent path traversal – only allow filenames that match the generated pattern.
   servePhoto(@Param('filename') filename: string, @Res() res: Response) {
-    return res.sendFile(filename, { root: './uploads' });
+    if (!uploadedFilenamePattern('wall').test(filename)) {
+      throw new BadRequestException('Invalid filename');
+    }
+    res.sendFile(filename, { root: UPLOAD_DIR }, (err) => {
+      if (err) {
+        // If the file does not exist or cannot be read, respond 404.
+        return res.status(404).send();
+      }
+    });
   }
 }

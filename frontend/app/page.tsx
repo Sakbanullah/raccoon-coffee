@@ -3,23 +3,30 @@ import BrandIntro from "../components/home/BrandIntro";
 import FeaturedMenu from "../components/home/FeaturedMenu";
 import StorySection from "../components/home/StorySection";
 import Atmosphere from "../components/home/Atmosphere";
-import EventsPreview from "../components/home/EventsPreview";
 import RaccoonWallPreview from "../components/home/RaccoonWallPreview";
 import LocationSection from "../components/home/LocationSection";
 import Footer from "../components/home/Footer";
 import Navbar from "../components/navigation/Navbar";
+import { getSiteImages } from "../lib/site-images";
 
-export default function Home() {
+export default async function Home() {
+  // Fetch custom section images server-side so the first render already has
+  // them, preventing the static-fallback flash the client hook caused.
+  const [heroImages, brandStoryImages, atmosphereImages] = await Promise.all([
+    getSiteImages("hero"),
+    getSiteImages("brand_story"),
+    getSiteImages("atmosphere"),
+  ]);
+
   return (
     <>
       <Navbar />
       <main className="bg-cream">
-        <Hero />
-        <BrandIntro />
+        <Hero images={heroImages} />
+        <BrandIntro images={brandStoryImages} />
         <FeaturedMenu />
         <StorySection />
-        <Atmosphere />
-        <EventsPreview />
+        <Atmosphere images={atmosphereImages} />
         <RaccoonWallPreview />
         <LocationSection />
         <Footer />

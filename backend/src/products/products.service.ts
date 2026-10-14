@@ -13,6 +13,8 @@ const PRODUCT_SELECT = {
   price: true,
   imageUrl: true,
   status: true,
+  isVisible: true,
+  isBestSeller: true,
   displayOrder: true,
 } as const;
 
@@ -20,8 +22,12 @@ const PRODUCT_SELECT = {
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(filter?: { categoryId?: string }) {
-    const where = filter?.categoryId ? { categoryId: filter.categoryId } : undefined;
+  async findAll(filter?: { categoryId?: string; publicOnly?: boolean }) {
+    const where = {
+      ...(filter?.categoryId && { categoryId: filter.categoryId }),
+      // ponytail: public menu filter only; admin list still returns hidden/inactive rows.
+      ...(filter?.publicOnly && { status: 'ACTIVE' as const, isVisible: true }),
+    };
     const products = await this.prisma.product.findMany({
       where,
       select: PRODUCT_SELECT,
@@ -55,6 +61,8 @@ export class ProductsService {
         price: dto.price,
         imageUrl: dto.imageUrl ?? null,
         status: dto.status,
+        isVisible: dto.isVisible ?? true,
+        isBestSeller: dto.isBestSeller ?? false,
         displayOrder: dto.displayOrder ?? 0,
         categoryId: dto.categoryId,
         branchId: dto.branchId ?? null,
@@ -82,6 +90,8 @@ export class ProductsService {
         ...(dto.price !== undefined && { price: dto.price }),
         ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
         ...(dto.status !== undefined && { status: dto.status }),
+        ...(dto.isVisible !== undefined && { isVisible: dto.isVisible }),
+        ...(dto.isBestSeller !== undefined && { isBestSeller: dto.isBestSeller }),
         ...(dto.displayOrder !== undefined && { displayOrder: dto.displayOrder }),
         ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
         ...(dto.branchId !== undefined && { branchId: dto.branchId }),
@@ -95,6 +105,13 @@ export class ProductsService {
     const existing = await this.findOne(id);
     await this.prisma.product.delete({ where: { productId: id } });
     return { data: existing.data };
+  }
+
+  async storeImage(file?: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('Image file is required.');
+    }
+    return { data: { imageUrl: `/api/products/uploads/${file.filename}` } };
   }
 
   private async assertCategoryExists(categoryId: string) {

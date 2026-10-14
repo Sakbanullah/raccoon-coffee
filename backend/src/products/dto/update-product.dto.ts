@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength, IsNumberString, IsEnum, IsUrl, IsInt } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, IsNumberString, IsEnum, IsInt, IsBoolean } from 'class-validator';
 import { ProductStatus } from '@prisma/client';
+import { IsImageUrl } from '../../uploads/image-url.decorator';
 
 /** All fields optional; mirrors CreateProductDto for PATCH. */
 export class UpdateProductDto {
@@ -24,13 +25,21 @@ export class UpdateProductDto {
   @IsOptional()
   price?: string;
 
-  @IsUrl()
+  @IsImageUrl()
   @IsOptional()
   imageUrl?: string;
 
   @IsEnum(ProductStatus)
   @IsOptional()
   status?: ProductStatus;
+
+  @IsBoolean()
+  @IsOptional()
+  isVisible?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isBestSeller?: boolean;
 
   @IsInt()
   @IsOptional()

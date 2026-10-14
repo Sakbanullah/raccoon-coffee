@@ -2,17 +2,21 @@
 
 import Reveal from "../ui/Reveal";
 import { ExpandableGallery } from "@/components/ui/gallery-animation";
+import type { SiteImage } from "@/types";
 
-const ATMOSPHERE_IMAGES = [
-  { src: "/images/raccoon/atmosphere/interior.jpg", alt: "Interior of Raccoon Coffee" },
-  { src: "/images/raccoon/atmosphere/barista.jpg", alt: "Barista at work" },
-  { src: "/images/raccoon/atmosphere/table.jpg", alt: "Table setting" },
-  { src: "/images/raccoon/atmosphere/evening.jpg", alt: "Evening atmosphere" },
-  { src: "/images/raccoon/atmosphere/counter.jpg", alt: "Counter area" },
-  { src: "/images/raccoon/atmosphere/crowd.jpg", alt: "Crowded cafe" },
+const FALLBACK_IMAGES = [
+  "/images/raccoon/atmosphere/interior.jpg",
+  "/images/raccoon/atmosphere/barista.jpg",
+  "/images/raccoon/atmosphere/table.jpg",
+  "/images/raccoon/atmosphere/evening.jpg",
+  "/images/raccoon/atmosphere/counter.jpg",
+  "/images/raccoon/atmosphere/crowd.jpg",
 ];
 
-export default function Atmosphere() {
+export default function Atmosphere({ images: siteImages }: { images: SiteImage[] }) {
+  // Gallery slot: visible images already arrive ordered by displayOrder.
+  const gallery = siteImages.filter((i) => i.slotKey === "gallery");
+  const images = gallery.length > 0 ? gallery.map((i) => i.imageUrl) : FALLBACK_IMAGES;
   return (
     <section id="atmosphere" className="relative bg-forest-deep py-20 text-cream sm:py-28 overflow-hidden">
       <div className="section-shell">
@@ -21,7 +25,7 @@ export default function Atmosphere() {
         </Reveal>
         <Reveal delay={0.1} className="mt-12">
           <ExpandableGallery
-            images={ATMOSPHERE_IMAGES.map((img) => img.src)}
+            images={images}
             className="w-full"
           />
         </Reveal>

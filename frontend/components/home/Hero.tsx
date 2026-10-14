@@ -3,11 +3,17 @@
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import { MOCK_BRANCHES } from "@/lib/mock-data";
+import type { SiteImage } from "@/types";
 
 const branch = MOCK_BRANCHES[0];
 
-export default function Hero() {
+const FALLBACK_SRC = "/images/raccoon/atmosphere/barista.jpg";
+const FALLBACK_ALT = "Barista pulling an espresso shot at Raccoon Coffee";
+
+export default function Hero({ images }: { images: SiteImage[] }) {
   const shouldReduceMotion = useReducedMotion();
+  // `primary` slot drives the full-bleed backdrop; server-fetched before first render.
+  const heroImage = images.find((img) => img.slotKey === "primary");
 
   const containerVariants = {
     hidden: {},
@@ -27,8 +33,8 @@ export default function Hero() {
       {/* Full‑bleed cinematic backdrop */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/raccoon/atmosphere/barista.jpg"
-          alt="Barista pulling an espresso shot at Raccoon Coffee"
+          src={heroImage?.imageUrl ?? FALLBACK_SRC}
+          alt={heroImage?.altText || FALLBACK_ALT}
           fill
           priority
           className="object-cover object-center"

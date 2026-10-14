@@ -35,6 +35,8 @@ export interface Product {
   price: string;
   imageUrl: string | null;
   status: ProductStatus;
+  isVisible: boolean;
+  isBestSeller: boolean;
   displayOrder: number;
 }
 
@@ -61,6 +63,19 @@ export interface Event {
   startTime: string | null;
   endTime: string | null;
   status: ContentStatus;
+}
+
+/** Mirrors backend `SiteImage` (section image for landing-page slots). */
+export interface SiteImage {
+  siteImageId: string;
+  sectionKey: string;
+  slotKey: string;
+  imageUrl: string;
+  altText: string | null;
+  displayOrder: number;
+  isVisible: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /** Mirrors backend `PhotoUpload` (public fields only). */

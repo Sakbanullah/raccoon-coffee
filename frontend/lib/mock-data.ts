@@ -33,6 +33,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "24000.00",
     imageUrl: "/images/raccoon/menu/coffee/espresso.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 1,
   },
   {
@@ -44,6 +46,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "26000.00",
     imageUrl: "/images/raccoon/menu/coffee/americano.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 2,
   },
   {
@@ -55,6 +59,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "42000.00",
     imageUrl: "/images/raccoon/menu/coffee/pourover.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 3,
   },
   {
@@ -66,6 +72,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "45000.00",
     imageUrl: "/images/raccoon/menu/coffee/beans.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 4,
   },
   {
@@ -77,6 +85,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "38000.00",
     imageUrl: "/images/raccoon/menu/coffee/coldbrew.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 5,
   },
   {
@@ -88,6 +98,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "36000.00",
     imageUrl: "/images/raccoon/menu/coffee/mocha.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 6,
   },
   {
@@ -99,6 +111,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "35000.00",
     imageUrl: "/images/raccoon/menu/coffee/latte.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 7,
   },
   {
@@ -110,6 +124,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "35000.00",
     imageUrl: "/images/raccoon/menu/coffee/cappuccino.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 8,
   },
   // Milk – cat-milk – 5 items
@@ -122,6 +138,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "32000.00",
     imageUrl: "/images/raccoon/menu/milk/strawberry.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 1,
   },
   {
@@ -133,6 +151,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "32000.00",
     imageUrl: "/images/raccoon/menu/milk/chocolate.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 2,
   },
   {
@@ -144,6 +164,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "32000.00",
     imageUrl: "/images/raccoon/menu/milk/vanilla.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 3,
   },
   {
@@ -155,6 +177,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "28000.00",
     imageUrl: "/images/raccoon/menu/milk/fresh.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 4,
   },
   {
@@ -166,6 +190,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "34000.00",
     imageUrl: "/images/raccoon/menu/milk/creamy.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 5,
   },
   // Non-Coffee – cat-non – 5 items
@@ -178,6 +204,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "33500.00",
     imageUrl: "/images/raccoon/menu/noncoffee/matcha.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 1,
   },
   {
@@ -189,6 +217,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "25000.00",
     imageUrl: "/images/raccoon/menu/noncoffee/tea.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 2,
   },
   {
@@ -200,6 +230,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "26000.00",
     imageUrl: "/images/raccoon/menu/noncoffee/lemon-tea.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 3,
   },
   {
@@ -211,6 +243,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "27500.00",
     imageUrl: "/images/raccoon/menu/noncoffee/chocolate.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 4,
   },
   {
@@ -222,6 +256,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "28000.00",
     imageUrl: "/images/raccoon/menu/noncoffee/iced.jpg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 5,
   },
   // Bites – cat-bites – unchanged
@@ -234,6 +270,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "32000.00",
     imageUrl: "/images/menu-5.svg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 5,
   },
   {
@@ -245,6 +283,8 @@ export const MOCK_PRODUCTS: Product[] = [
     price: "30000.00",
     imageUrl: "/images/menu-6.svg",
     status: "ACTIVE",
+    isVisible: true,
+    isBestSeller: false,
     displayOrder: 6,
   },
 ];
