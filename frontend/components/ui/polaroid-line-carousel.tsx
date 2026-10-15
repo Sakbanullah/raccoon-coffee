@@ -454,7 +454,7 @@ export default function PolaroidLineCarousel({
         </div>
       ))}
       {hasUpload && (
-        <div className="pl-card" data-i={nData} data-on={isUploadActive ? "1" : "0"} onClick={onUploadClick} aria-label={uploadLabel} role="button" tabIndex={0} ref={(el) => void (cards.current[nData] = el)}>
+        <div className="pl-card" data-i={nData} data-on={isUploadActive ? "1" : "0"} onClick={onUploadClick} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onUploadClick?.(); } }} aria-label={uploadLabel} role="button" tabIndex={0} ref={(el) => void (cards.current[nData] = el)}>
           <div className="pl-print">
             <div className="pl-shot" />
             <div className="pl-note"></div>

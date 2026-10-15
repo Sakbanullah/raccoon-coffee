@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Reveal from "../ui/Reveal";
 import { FileUploadCard } from "../ui/file-upload-card";
@@ -14,7 +13,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
 const WALL_MAX = 8;
 
 export default function RaccoonWallPreview() {
-  const [photos, setPhotos] = useState<PhotoUpload[]>([]);
+  const [photos, setPhotos] = useState<PhotoUpload[] | null>(null);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -29,6 +28,8 @@ export default function RaccoonWallPreview() {
 
         if (Array.isArray(json?.data)) {
           setPhotos(json.data.slice(0, WALL_MAX));
+        } else {
+          setPhotos([]);
         }
       } catch {
         if (!controller.signal.aborted) {
@@ -43,31 +44,72 @@ export default function RaccoonWallPreview() {
   }, []);
 
   return (
-    <section id="inside" className="bg-cream py-20 text-ink sm:py-28 torn-bottom">
+    <section id="inside" className="bg-cream-paper py-20 text-ink sm:py-28">
       <div className="section-shell">
         <Reveal>
-          <p className="eyebrow text-gold">Raccoon Wall</p>
-          <h2 className="mt-4 max-w-2xl font-display text-3xl leading-[1.05] text-ink sm:text-4xl md:text-5xl">
-            Coffee, food, and a place to slow down.
-          </h2>
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <div>
+              <p className="eyebrow text-coffee">
+                <span aria-hidden="true" className="mr-2 text-gold">•</span>
+                Raccoon Wall
+              </p>
+              <h2 className="mt-4 max-w-2xl font-display text-3xl leading-[1.05] text-ink sm:text-4xl md:text-5xl">
+                Coffee, food, and a place to{" "}
+                <em className="italic text-coffee">slow down.</em>
+              </h2>
+            </div>
+            <p className="max-w-xs text-sm leading-relaxed text-ink/60">
+              Momen pengunjung, dikurasi admin. Kirim fotomu dan jadilah bagian dari dinding ini.
+            </p>
+          </div>
         </Reveal>
 
-        <Reveal delay={0.05} className="mt-14">
-          <PolaroidLineCarousel
-            slides={photos.map((p) => ({ image: p.imageUrl }))}
-            height="60vh"
-            cardWidth={300}
-            sag={46}
-            swing={1}
-            autoplay={4500}
-            string="#8a7f72"
-            background="#F4EBDD"
-            ink="#1F261F"
-            showUploadCard={true}
-            onUploadClick={() => setOpen(true)}
-            uploadLabel="Bagikan momenmu"
-          />
-        </Reveal>
+        {photos === null ? (
+          <div className="mt-14 h-[45vh] animate-pulse rounded-[1.5rem] bg-sand/50" aria-hidden="true" />
+        ) : photos.length === 0 ? (
+          <Reveal delay={0.05} className="mt-14">
+            {/* Intentional empty state: no blank polaroid frames on the line. */}
+            <div className="rounded-[1.5rem] border border-dashed border-bark/30 bg-cream px-6 py-16 text-center sm:py-20">
+              <p className="font-display text-2xl text-ink">Dinding ini menunggu fotomu.</p>
+              <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-ink/65">
+                Belum ada foto yang tayang. Jadilah yang pertama membagikan momen di Raccoon.
+              </p>
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="group mt-8 inline-flex min-h-11 items-center gap-3 rounded-full bg-forest-deep py-2 pl-6 pr-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cream transition-colors duration-200 hover:bg-forest"
+              >
+                Bagikan momenmu
+                <span
+                  aria-hidden="true"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-cream text-forest-deep transition-transform duration-300 group-hover:-rotate-45"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                    <path d="M12 5v14" />
+                    <path d="M5 12h14" />
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </Reveal>
+        ) : (
+          <Reveal delay={0.05} className="mt-14">
+            <PolaroidLineCarousel
+              slides={photos.map((p) => ({ image: p.imageUrl }))}
+              height="max(60vh, 24rem)"
+              cardWidth={300}
+              sag={46}
+              swing={1}
+              autoplay={4500}
+              string="#8a7f72"
+              background="#F9F1E3"
+              ink="#1F261F"
+              showUploadCard={true}
+              onUploadClick={() => setOpen(true)}
+              uploadLabel="Bagikan momenmu"
+            />
+          </Reveal>
+        )}
       </div>
 
       {open && (
@@ -148,7 +190,7 @@ function UploadModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-3 backdrop-blur-sm sm:p-4" onClick={() => !submitting && onClose()} role="dialog" aria-modal="true" aria-label="Bagikan momenmu">
       <motion.div initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} onClick={(e) => e.stopPropagation()} className="relative max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-[10px] border border-navy/15 bg-cream p-5 text-navy shadow-[0_30px_60px_-30px_rgba(16,27,45,0.6)] sm:p-8">
-        <button type="button" onClick={() => !submitting && onClose()} aria-label="Tutup" className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full text-navy/50 transition-colors hover:bg-navy/5 hover:text-navy sm:right-3 sm:top-3">✕</button>
+        <button type="button" onClick={() => !submitting && onClose()} aria-label="Tutup" className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full text-navy/50 transition-colors hover:bg-navy/5 hover:text-navy sm:right-3 sm:top-3">✕</button>
         {success ? (
           <div className="py-6 text-center">
             <p className="font-display text-2xl">Terima kasih!</p>
@@ -162,7 +204,7 @@ function UploadModal({ onClose }: { onClose: () => void }) {
             <FileUploadCard files={files} onFilesChange={handleFilesChange} onFileRemove={handleFileRemove} />
             <div>
               <label className="mb-1 block text-sm font-medium" htmlFor="wall-name">Nama</label>
-              <input id="wall-name" type="text" value={visitorName} maxLength={255} onChange={e => setVisitorName(e.target.value)} className="w-full rounded border border-navy/25 bg-cream px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy" placeholder="Namamu" />
+              <input id="wall-name" type="text" value={visitorName} maxLength={255} onChange={e => setVisitorName(e.target.value)} className="w-full rounded border border-navy/25 bg-cream px-3 py-2.5 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy" placeholder="Namamu" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium" htmlFor="wall-caption">Caption <span className="text-navy/50">(opsional)</span></label>

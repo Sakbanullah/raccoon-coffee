@@ -43,17 +43,17 @@ export default function Navbar() {
           : "border-transparent bg-gradient-to-b from-forest-deep/90 via-forest-deep/30 to-transparent")
       }
     >
-      <div className="section-shell flex h-16 items-center justify-between gap-6 sm:h-[4.5rem]">
+      <div className="section-shell flex h-14 items-center justify-between gap-6 sm:h-16">
         <Link
           href="/"
           className={`group inline-flex items-center gap-3 font-display text-lg tracking-tight transition-colors duration-300 sm:text-xl ${textColor}`}
           aria-label="Raccoon Coffee & Chill - Home"
         >
           {/* Logo brand image */}
-          <Image src="/images/logo.svg" alt="Raccoon Coffee logo" width={32} height={32} className="object-contain" />
+
           <span className="inline-flex items-baseline gap-2">
             Raccoon
-            <span className={`text-[10px] font-medium uppercase tracking-[0.3em] ${scrolled ? "text-coffee" : "text-gold"}`}>
+            <span className={`hidden text-[10px] font-medium uppercase tracking-[0.3em] sm:inline ${scrolled ? "text-coffee" : "text-gold"}`}>
               Coffee & Chill
             </span>
           </span>
@@ -76,13 +76,26 @@ export default function Navbar() {
           <Link
             href="#location"
             className={
-              "ml-2 rounded-sm px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200 shadow-sm " +
+              "group ml-2 inline-flex items-center gap-2.5 rounded-full py-1.5 pl-5 pr-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] transition-colors duration-200 " +
               (scrolled
-                ? "bg-forest text-cream hover:bg-forest-light"
-                : "bg-gold text-forest-deep hover:bg-cream")
+                ? "bg-forest-deep text-cream hover:bg-forest"
+                : "bg-cream text-forest-deep hover:bg-gold"
+            )
             }
           >
             Visit Us
+            <span
+              aria-hidden="true"
+              className={
+                "flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-300 group-hover:-rotate-45 " +
+                (scrolled ? "bg-cream text-forest-deep" : "bg-forest-deep text-cream")
+              }
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="M7 17 17 7" />
+                <path d="M8 7h9v9" />
+              </svg>
+            </span>
           </Link>
         </nav>
 
@@ -92,7 +105,7 @@ export default function Navbar() {
           aria-controls="mobile-nav"
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((v) => !v)}
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-sm transition-colors lg:hidden ${scrolled ? "text-ink hover:bg-ink/5" : "text-cream hover:bg-cream/10"}`}
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-sm transition-colors lg:hidden ${scrolled ? "text-ink hover:bg-ink/5" : "text-cream hover:bg-cream/10"}`}
         >
           <span className="relative flex h-[14px] w-[18px] flex-col justify-between">
             <span
@@ -131,7 +144,7 @@ export default function Navbar() {
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="overflow-hidden border-t border-cream-dark bg-cream text-ink lg:hidden shadow-xl"
           >
-            <ul className="section-shell flex flex-col py-8 space-y-2">
+            <ul className="section-shell flex max-h-[calc(100dvh-8rem)] flex-col space-y-2 overflow-y-auto py-8">
               {LINKS.map((l, i) => (
                 <motion.li
                   key={l.href}
@@ -159,7 +172,7 @@ export default function Navbar() {
                 <Link
                   href="#location"
                   onClick={() => setOpen(false)}
-                  className="block rounded-sm bg-forest px-6 py-3.5 text-center text-xs font-semibold uppercase tracking-[0.18em] text-cream shadow-md transition-colors hover:bg-forest-light"
+                  className="block rounded-full bg-forest-deep px-6 py-3.5 text-center text-xs font-semibold uppercase tracking-[0.18em] text-cream transition-colors hover:bg-forest"
                 >
                   Visit Raccoon Coffee
                 </Link>

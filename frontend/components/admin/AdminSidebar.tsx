@@ -27,13 +27,7 @@ export function AdminSidebar() {
   const nav = (
     <nav aria-label="Admin" className="flex h-full flex-col">
       <div className="flex h-16 items-center gap-3 border-b border-border px-5">
-        <Image
-          src="/images/logo.svg"
-          alt="Raccoon Coffee logo"
-          width={30}
-          height={30}
-          className="object-contain"
-        />
+
         <div className="leading-tight">
           <p className="font-display text-base font-semibold tracking-tight text-foreground">
             Raccoon Coffee

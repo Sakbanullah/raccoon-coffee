@@ -1,7 +1,7 @@
 import Hero from "../components/home/Hero";
+import RitualArc from "../components/home/RitualArc";
 import BrandIntro from "../components/home/BrandIntro";
 import FeaturedMenu from "../components/home/FeaturedMenu";
-import StorySection from "../components/home/StorySection";
 import Atmosphere from "../components/home/Atmosphere";
 import RaccoonWallPreview from "../components/home/RaccoonWallPreview";
 import LocationSection from "../components/home/LocationSection";
@@ -23,9 +23,9 @@ export default async function Home() {
       <Navbar />
       <main className="bg-cream">
         <Hero images={heroImages} />
+        <RitualArc />
         <BrandIntro images={brandStoryImages} />
         <FeaturedMenu />
-        <StorySection />
         <Atmosphere images={atmosphereImages} />
         <RaccoonWallPreview />
         <LocationSection />

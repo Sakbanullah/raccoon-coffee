@@ -60,7 +60,7 @@ export default function RaccoonWallTerms() {
           </section>
         </div>
 
-        <Link href="/" className="mt-12 inline-block text-sm font-medium text-forest underline underline-offset-4">
+        <Link href="/" className="mt-12 inline-block py-2 text-sm font-medium text-forest underline underline-offset-4">
           Kembali ke Beranda
         </Link>
       </article>

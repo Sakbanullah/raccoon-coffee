@@ -30,9 +30,13 @@ module.exports = {
         coffee: { DEFAULT: "#6F4E37", light: "#8a6a53" },
         gold: { DEFAULT: "#C69A4E", light: "#D8B06A", muted: "#B8923A" },
         ink: { DEFAULT: "#1F261F", muted: "#2E3830" },
+        // Warm editorial neutrals adapted from the Kario reference palette.
+        sand: "#DFDBD3",
+        bark: "#483827",
       },
       fontFamily: {
         display: ["Georgia", "Cambria", "Times New Roman", "serif"],
+        script: ["var(--font-script)", "cursive"],
         body: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
       },
       maxWidth: { editorial: "72rem" },
