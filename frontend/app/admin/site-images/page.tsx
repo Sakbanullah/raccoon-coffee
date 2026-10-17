@@ -50,6 +50,10 @@ export default function SiteImagesPage() {
   // Upload form state.
   const [slot, setSlot] = useState("primary");
   const [file, setFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  // Remounts the file input after upload/section change; without it the browser
+  // keeps showing the old filename and re-picking the same file fires no change.
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [altText, setAltText] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -68,7 +72,7 @@ export default function SiteImagesPage() {
     setListError(null);
     setAuthRequired(false);
     try {
-      const res = await fetch(`/api/site-images/admin?section=${section}`, { cache: "no-store" });
+      const res = await apiFetch(`/api/site-images/admin?section=${section}`, { cache: "no-store" });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) {
           setAuthRequired(true);
@@ -97,6 +101,8 @@ export default function SiteImagesPage() {
   useEffect(() => {
     setSlot(SECTION_SLOTS[section][0]);
     setFile(null);
+    setFileName(null);
+    setFileInputKey((k) => k + 1);
     setAltText("");
     setUploadError(null);
   }, [section]);
@@ -113,10 +119,10 @@ export default function SiteImagesPage() {
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0] ?? null;
-    e.target.value = "";
     setUploadError(null);
     if (!selected) {
       setFile(null);
+      setFileName(null);
       return;
     }
     const imageError = checkImageFile(selected);
@@ -125,6 +131,7 @@ export default function SiteImagesPage() {
       return;
     }
     setFile(selected);
+    setFileName(selected.name);
   };
 
   const submitUpload = async (e: React.FormEvent) => {
@@ -141,6 +148,8 @@ export default function SiteImagesPage() {
       const res = await apiFetch("/api/site-images", { method: "POST", body: formData });
       if (!res.ok) throw new Error(await errorBody(res));
       setFile(null);
+      setFileName(null);
+      setFileInputKey((k) => k + 1);
       setAltText("");
       await load();
     } catch (err) {
@@ -310,6 +319,7 @@ export default function SiteImagesPage() {
                     Image
                   </label>
                   <input
+                    key={fileInputKey}
                     id="site-image-file"
                     type="file"
                     accept="image/jpeg,image/png,image/gif"
@@ -317,7 +327,9 @@ export default function SiteImagesPage() {
                     disabled={uploading}
                     className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-border file:bg-surface-elevated file:px-3 file:py-1.5 file:text-sm file:text-foreground hover:file:bg-surface disabled:opacity-50"
                   />
-                  <p className="mt-1 text-xs text-muted-foreground">JPG, PNG, or GIF · max 5 MB</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground" title={fileName ?? undefined}>
+                    {fileName ? `File: ${fileName}` : "JPG, PNG, or GIF · max 5 MB"}
+                  </p>
                 </div>
                 <div>
                   <label htmlFor="site-image-alt" className="mb-1 block text-sm font-medium text-foreground">
@@ -398,6 +410,9 @@ export default function SiteImagesPage() {
                         {image.isVisible ? "Visible" : "Hidden"}
                       </span>
                     </div>
+                    <p className="truncate text-xs text-muted-foreground" title={image.imageUrl}>
+                      File: {image.imageUrl.split("/").pop()}
+                    </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <label className="sr-only" htmlFor={`alt-${image.siteImageId}`}>
                         Alt text
