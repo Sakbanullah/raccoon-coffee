@@ -17,6 +17,9 @@ export type SectionKey = keyof typeof SECTION_SLOTS;
 
 export const SECTION_KEYS = Object.keys(SECTION_SLOTS) as SectionKey[];
 
+/** Every slot name used by any section (L-6): the DTO-level allowlist. */
+export const SLOT_KEYS: string[] = [...new Set(Object.values(SECTION_SLOTS).flat())];
+
 /** Sections where a slot holds exactly one image. */
 export const SINGLE_SLOT_SECTIONS: SectionKey[] = ['hero', 'brand_story'];
 

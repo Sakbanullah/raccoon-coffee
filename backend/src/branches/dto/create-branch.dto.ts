@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength, IsNumberString, IsUrl, IsBoolean } from 'class-validator';
+﻿import { IsString, IsNotEmpty, IsOptional, MaxLength, IsNumberString, IsUrl, IsBoolean, Matches } from 'class-validator';
+import { TIME_OF_DAY_PATTERN } from '../../common/time.util';
 
 export class CreateBranchDto {
   @IsString()
@@ -38,10 +39,12 @@ export class CreateBranchDto {
 
   @IsString()
   @IsOptional()
+  @Matches(TIME_OF_DAY_PATTERN, { message: 'openingTime must be a 24-hour "HH:mm" time.' })
   openingTime?: string;
 
   @IsString()
   @IsOptional()
+  @Matches(TIME_OF_DAY_PATTERN, { message: 'closingTime must be a 24-hour "HH:mm" time.' })
   closingTime?: string;
 
   @IsString()

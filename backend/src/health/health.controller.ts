@@ -1,8 +1,12 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+﻿import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('health')
+// Liveness must answer even when the global rate-limit bucket is exhausted;
+// otherwise a traffic spike looks like an outage to the load balancer.
+@SkipThrottle()
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -18,3 +22,4 @@ export class HealthController {
     }
   }
 }
+
