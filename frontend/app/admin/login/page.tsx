@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { SignInFlo } from "@/components/ui/sign-in-flo";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -36,38 +37,14 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="mx-auto mt-20 max-w-md">
-      <h2 className="mb-6 font-display text-2xl text-foreground">Admin Login</h2>
-      <form onSubmit={handleLogin} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Email</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-border bg-input p-2 text-foreground"
-            required
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-foreground">Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-border bg-input p-2 text-foreground"
-            required
-          />
-        </div>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded bg-brand-primary py-2 font-medium text-foreground hover:bg-brand-primary-hover disabled:opacity-50"
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
-    </div>
+    <SignInFlo
+      email={email}
+      password={password}
+      error={error}
+      loading={loading}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      onSubmit={handleLogin}
+    />
   );
 }
