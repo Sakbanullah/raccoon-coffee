@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, ParseUUIDPipe, Query } from '@nestjs/common';
 import { StoriesService } from './stories.service';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateStoryDto } from './dto/update-story.dto';
+import { PaginationQueryDto } from '../common/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('stories')
@@ -9,8 +10,8 @@ export class StoriesController {
   constructor(private readonly service: StoriesService) {}
 
   @Get()
-  findPublished() {
-    return this.service.findPublished();
+  findPublished(@Query() query: PaginationQueryDto) {
+    return this.service.findPublished(query);
   }
 
   @Get(':id')

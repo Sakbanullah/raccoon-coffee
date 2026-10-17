@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, ParseUUIDPipe, Query } from '@nestjs/common';
 import { BranchesService } from './branches.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
+import { PaginationQueryDto } from '../common/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('branches')
@@ -9,10 +10,12 @@ export class BranchesController {
   constructor(private readonly service: BranchesService) {}
 
   @Get()
-  findActive() {
-    return this.service.findActive();
+  findActive(@Query() query: PaginationQueryDto) {
+    return this.service.findActive(query);
   }
 
+  // Admin-only list; the public endpoint above exposes active branches only.
+  @UseGuards(JwtAuthGuard)
   @Get('all')
   findAll() {
     return this.service.findAll();

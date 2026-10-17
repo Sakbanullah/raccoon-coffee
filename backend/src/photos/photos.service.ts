@@ -8,18 +8,27 @@ import { UPLOAD_DIR, uploadedFilenamePattern } from '../uploads/upload.config';
 export class PhotosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findApproved() {
-    const photos = await this.prisma.photoUpload.findMany({
-      where: { status: 'APPROVED' },
-      select: {
-        photoId: true,
-        imageUrl: true,
-        caption: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    return { data: photos, meta: { total: photos.length } };
+  async findApproved(page = 1, limit = 12) {
+    const where = { status: 'APPROVED' as const };
+    const [total, photos] = await this.prisma.$transaction([
+      this.prisma.photoUpload.count({ where }),
+      this.prisma.photoUpload.findMany({
+        where,
+        select: {
+          photoId: true,
+          imageUrl: true,
+          caption: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+    return {
+      data: photos,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
+    };
   }
 
   async findPending() {

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
+import { ShutdownModule } from './shutdown/shutdown.module';
 import { AdminModule } from './admin/admin.module';
 import { BranchesModule } from './branches/branches.module';
 import { ProductCategoriesModule } from './product-categories/product-categories.module';
@@ -23,6 +24,7 @@ import { HealthModule } from './health/health.module';
       },
     ]),
     PrismaModule,
+    ShutdownModule,
     AdminModule,
     BranchesModule,
     ProductCategoriesModule,

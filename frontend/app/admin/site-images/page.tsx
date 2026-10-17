@@ -6,6 +6,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { EmptyState } from "@/components/admin/Overview";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api";
 import type { SiteImage } from "@/types";
 
 /** Mirrors backend/src/site-images/section-slots.ts. */
@@ -101,7 +102,7 @@ export default function SiteImagesPage() {
   }, [section]);
 
   const patchImage = async (id: string, payload: Partial<Pick<SiteImage, "altText" | "isVisible" | "displayOrder">>) => {
-    const res = await fetch(`/api/site-images/${id}`, {
+    const res = await apiFetch(`/api/site-images/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -137,7 +138,7 @@ export default function SiteImagesPage() {
       formData.append("section", section);
       formData.append("slot", slot);
       if (altText.trim()) formData.append("altText", altText.trim());
-      const res = await fetch("/api/site-images", { method: "POST", body: formData });
+      const res = await apiFetch("/api/site-images", { method: "POST", body: formData });
       if (!res.ok) throw new Error(await errorBody(res));
       setFile(null);
       setAltText("");
@@ -210,7 +211,7 @@ export default function SiteImagesPage() {
     if (!pendingDelete || deleting) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/site-images/${pendingDelete.siteImageId}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/site-images/${pendingDelete.siteImageId}`, { method: "DELETE" });
       if (!res.ok) throw new Error(await errorBody(res));
       setImages((prev) => prev.filter((i) => i.siteImageId !== pendingDelete.siteImageId));
       setPendingDelete(null);

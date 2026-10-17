@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
 
 const PRODUCT_SELECT = {
   productId: true,
@@ -22,18 +23,34 @@ const PRODUCT_SELECT = {
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(filter?: { categoryId?: string; publicOnly?: boolean }) {
+  async findAll(filter?: { categoryId?: string; publicOnly?: boolean }, pagination?: PaginationQueryDto) {
     const where = {
       ...(filter?.categoryId && { categoryId: filter.categoryId }),
       // ponytail: public menu filter only; admin list still returns hidden/inactive rows.
       ...(filter?.publicOnly && { status: 'ACTIVE' as const, isVisible: true }),
     };
-    const products = await this.prisma.product.findMany({
-      where,
-      select: PRODUCT_SELECT,
-      orderBy: { displayOrder: 'asc' },
-    });
-    return { data: products, meta: { total: products.length } };
+    // No page/limit params → legacy full list (admin tables rely on this).
+    if (!pagination?.page && !pagination?.limit) {
+      const products = await this.prisma.product.findMany({
+        where,
+        select: PRODUCT_SELECT,
+        orderBy: { displayOrder: 'asc' },
+      });
+      return { data: products, meta: { total: products.length } };
+    }
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 12;
+    const [total, products] = await this.prisma.$transaction([
+      this.prisma.product.count({ where }),
+      this.prisma.product.findMany({
+        where,
+        select: PRODUCT_SELECT,
+        orderBy: { displayOrder: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+    return { data: products, meta: paginationMeta(total, page, limit) };
   }
 
   async findOne(id: string) {

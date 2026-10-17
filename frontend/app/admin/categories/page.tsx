@@ -6,6 +6,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { EmptyState } from "@/components/admin/Overview";
 import { cn } from "@/lib/utils";
 import type { ProductCategory } from "@/types";
+import { apiFetch } from "@/lib/api";
 
 interface CategoryFormState {
   name: string;
@@ -114,7 +115,7 @@ export default function CategoriesPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(editing ? `/api/product-categories/${editing.categoryId}` : "/api/product-categories", {
+      const res = await apiFetch(editing ? `/api/product-categories/${editing.categoryId}` : "/api/product-categories", {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -141,7 +142,7 @@ export default function CategoriesPage() {
     const id = confirmingDelete.categoryId;
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/product-categories/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/product-categories/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       setCategories((prev) => prev.filter((c) => c.categoryId !== id));
       setConfirmingDelete(null);

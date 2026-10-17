@@ -37,11 +37,11 @@ export default function Hero({ images }: { images: SiteImage[] }) {
 
       <div className="section-shell relative z-10 flex h-full flex-col justify-center pb-36 pt-24 sm:pb-44">
         <div className="max-w-md">
-          <h1 className="font-display text-4xl leading-[1.08] text-cream sm:text-5xl">
+          <h1 className="font-display text-5xl leading-[1.08] text-cream sm:text-6xl md:text-7xl">
             Tempat untuk{" "}
             <em className="italic text-gold-light">Berhenti Sebentar.</em>
           </h1>
-          <p className="mt-5 max-w-sm text-sm leading-relaxed text-cream/80 sm:text-base">
+          <p className="mt-6 max-w-sm text-base leading-relaxed text-cream/80 sm:text-lg">
             Good coffee, slow moments, and stories worth sharing.
           </p>
 

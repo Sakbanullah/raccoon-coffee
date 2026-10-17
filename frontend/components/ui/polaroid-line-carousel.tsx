@@ -447,7 +447,7 @@ export default function PolaroidLineCarousel({
       {slides.map((sl, i) => (
         <div key={i} className="pl-card" data-i={i} data-on={i === active ? "1" : "0"} ref={(el) => void (cards.current[i] = el)} aria-hidden={i === active ? undefined : true}>
           <div className="pl-print">
-            <div className="pl-shot">{srcs[i] ? <img src={srcs[i]} alt={sl.alt || sl.title || ""} draggable={false} onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : null}</div>
+            <div className="pl-shot">{srcs[i] ? <img key={srcs[i]} src={srcs[i]} alt={sl.alt || sl.title || ""} draggable={false} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : null}</div>
             <div className="pl-note">{sl.title || ""}</div>
           </div>
           <div className="pl-peg" />

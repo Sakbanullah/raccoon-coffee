@@ -6,6 +6,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { EmptyState } from "@/components/admin/Overview";
 import { cn } from "@/lib/utils";
 import type { Product, ProductCategory } from "@/types";
+import { apiFetch } from "@/lib/api";
 
 type VisibilityFilter = "all" | "visible" | "hidden";
 type BestSellerFilter = "all" | "bestseller" | "normal";
@@ -84,7 +85,7 @@ export default function MenuDisplayPage() {
       prev.map((p) => (p.productId === product.productId ? { ...p, isVisible: nextVisible } : p)),
     );
     try {
-      const res = await fetch(`/api/products/${product.productId}`, {
+      const res = await apiFetch(`/api/products/${product.productId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isVisible: nextVisible }),
@@ -107,7 +108,7 @@ export default function MenuDisplayPage() {
       prev.map((p) => (p.productId === product.productId ? { ...p, isBestSeller: nextBestSeller } : p)),
     );
     try {
-      const res = await fetch(`/api/products/${product.productId}`, {
+      const res = await apiFetch(`/api/products/${product.productId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isBestSeller: nextBestSeller }),
@@ -130,7 +131,7 @@ export default function MenuDisplayPage() {
       prev.map((p) => (p.productId === product.productId ? { ...p, displayOrder: newOrder } : p)),
     );
     try {
-      const res = await fetch(`/api/products/${product.productId}`, {
+      const res = await apiFetch(`/api/products/${product.productId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ displayOrder: newOrder }),

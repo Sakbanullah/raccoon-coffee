@@ -7,6 +7,7 @@ import { AdminHeader } from "@/components/admin/AdminHeader";
 import { EmptyState } from "@/components/admin/Overview";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { PhotoUpload } from "../../../types";
+import { apiFetch } from "@/lib/api";
 
 type Tab = "pending" | "approved";
 
@@ -52,7 +53,7 @@ export default function RaccoonWallPage() {
 
   const handleModerate = async (id: string, action: "approve" | "reject") => {
     try {
-      const res = await fetch(`/api/photos/${id}/${action}`, { method: "PATCH" });
+      const res = await apiFetch(`/api/photos/${id}/${action}`, { method: "PATCH" });
       if (!res.ok) throw new Error("Failed to moderate");
       setPhotos((prev) => prev.filter((p) => p.photoId !== id));
     } catch {
@@ -65,7 +66,7 @@ export default function RaccoonWallPage() {
     const id = pendingDelete.photoId;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/photos/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/photos/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
       setPhotos((prev) => prev.filter((p) => p.photoId !== id));
       setPendingDelete(null);

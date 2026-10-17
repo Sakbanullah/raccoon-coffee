@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
 
 const CATEGORY_SELECT = {
   categoryId: true,
@@ -14,12 +15,27 @@ const CATEGORY_SELECT = {
 export class ProductCategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
-    const categories = await this.prisma.productCategory.findMany({
-      select: CATEGORY_SELECT,
-      orderBy: { displayOrder: 'asc' },
-    });
-    return { data: categories, meta: { total: categories.length } };
+  async findAll(pagination?: PaginationQueryDto) {
+    // No page/limit params → legacy full list (homepage + admin rely on this).
+    if (!pagination?.page && !pagination?.limit) {
+      const categories = await this.prisma.productCategory.findMany({
+        select: CATEGORY_SELECT,
+        orderBy: { displayOrder: 'asc' },
+      });
+      return { data: categories, meta: { total: categories.length } };
+    }
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 12;
+    const [total, categories] = await this.prisma.$transaction([
+      this.prisma.productCategory.count(),
+      this.prisma.productCategory.findMany({
+        select: CATEGORY_SELECT,
+        orderBy: { displayOrder: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+    return { data: categories, meta: paginationMeta(total, page, limit) };
   }
 
   async findOne(id: string) {

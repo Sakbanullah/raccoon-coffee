@@ -1,6 +1,7 @@
 import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { PaginationQueryDto } from '../../common/pagination-query.dto';
 
-export class FindProductsQueryDto {
+export class FindProductsQueryDto extends PaginationQueryDto {
   /** ProductCategory.categoryId (uuid CHAR(36)) */
   @IsOptional()
   @IsString()

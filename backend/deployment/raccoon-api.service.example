@@ -1,0 +1,46 @@
+# Raccoon Coffee backend — systemd unit TEMPLATE
+#
+# Adapt the placeholders marked with <...>, then install:
+#   sudo cp raccoon-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now raccoon-api
+#
+# Notes:
+#  - Node must be on the PATH used by systemd. If it is not, set the absolute
+#    path in the Environment= line below or use an ExecStart absolute path.
+#  - The deploy directory is assumed to be a plain `npm run build` checkout
+#    (dist/main.js); no Docker, no bundler changes.
+
+[Unit]
+Description=Raccoon Coffee backend (NestJS API)
+After=network-online.target mysql.service mariadb.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<service-user>
+Group=<service-group>
+WorkingDirectory=<deploy-path>/backend
+
+# Environment file OUTSIDE the repository, root-owned, chmod 600.
+# Contains JWT_SECRET and DATABASE_URL and must never be committed.
+EnvironmentFile=/etc/raccoon/raccoon-api.env
+
+ExecStart=<node-path> dist/main.js
+Restart=on-failure
+RestartSec=5
+
+# Defense in depth (kept conservative so the app still works):
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+# Allow writing only inside the upload directory:
+ReadOnlyPaths=<deploy-path>
+ReadWritePaths=<absolute-upload-directory>
+
+# Logging goes to journald; override only if you ship files.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
 
 const EVENT_PUBLIC_SELECT = {
   eventId: true,
@@ -20,13 +21,30 @@ const EVENT_PUBLIC_SELECT = {
 export class EventsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findPublished() {
-    const events = await this.prisma.event.findMany({
-      where: { status: 'PUBLISHED' },
-      select: EVENT_PUBLIC_SELECT,
-      orderBy: { eventDate: 'desc' },
-    });
-    return { data: events, meta: { total: events.length } };
+  async findPublished(pagination?: PaginationQueryDto) {
+    const where = { status: 'PUBLISHED' as const };
+    // No page/limit params → legacy full list.
+    if (!pagination?.page && !pagination?.limit) {
+      const events = await this.prisma.event.findMany({
+        where,
+        select: EVENT_PUBLIC_SELECT,
+        orderBy: { eventDate: 'desc' },
+      });
+      return { data: events, meta: { total: events.length } };
+    }
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 12;
+    const [total, events] = await this.prisma.$transaction([
+      this.prisma.event.count({ where }),
+      this.prisma.event.findMany({
+        where,
+        select: EVENT_PUBLIC_SELECT,
+        orderBy: { eventDate: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+    return { data: events, meta: paginationMeta(total, page, limit) };
   }
 
   async findOne(id: string) {

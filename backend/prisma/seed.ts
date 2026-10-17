@@ -1,6 +1,32 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+// First-admin bootstrap.
+//
+// No admin credentials are committed to source. The first admin is created only
+// when the operator supplies BOTH env vars below at seed time:
+//
+//   SEED_ADMIN_EMAIL    e.g. owner@example.com
+//   SEED_ADMIN_PASSWORD e.g. a strong, operator-chosen password
+//
+// Behaviour:
+//   - Both set   -> create the admin if it does not already exist.
+//                   If the email already exists, this is a NO-OP: the existing
+//                   password (and name) are left untouched, so re-running the
+//                   seed never resets a rotated password.
+//   - Both unset -> skip admin bootstrap entirely (menu/content seeding only).
+//   - One set    -> fail loudly; a half-configured bootstrap is a mistake.
+//
+// Secrets are never logged. Only the email (safe identifier) may be logged.
+const SEED_ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL?.trim();
+const SEED_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
+const SEED_ADMIN_NAME = process.env.SEED_ADMIN_NAME?.trim() || 'Admin';
+
+function hasEnv(value: string | undefined): value is string {
+  return typeof value === 'string' && value.length > 0;
+}
 
 const BRANCHES = [
   {
@@ -24,14 +50,14 @@ const BRANCHES = [
 // schema, so they are flattened into these categories in PDF order via
 // displayOrder.
 const CATEGORIES = [
-  { categoryId: 'cat-coffee', name: 'Coffee', slug: 'coffee', displayOrder: 1, icon: 'coffee.png' },
-  { categoryId: 'cat-milk', name: 'Milk Base', slug: 'milk-base', displayOrder: 2, icon: 'milk-based.png' },
-  { categoryId: 'cat-matcha', name: 'Matcha - Choco', slug: 'matcha-choco', displayOrder: 3, icon: 'matcha.png' },
-  { categoryId: 'cat-non', name: 'Tea Series', slug: 'tea-series', displayOrder: 4, icon: 'tea.png' },
-  { categoryId: 'cat-refreshing', name: 'Refreshing Drinks', slug: 'refreshing-drinks', displayOrder: 5, icon: 'refreshing-drinks.png' },
-  { categoryId: 'cat-cold', name: 'Cold Drinks', slug: 'cold-drinks', displayOrder: 6, icon: 'frappe.png' },
-  { categoryId: 'cat-food', name: 'Main Food', slug: 'main-food', displayOrder: 7, icon: 'food.png' },
-  { categoryId: 'cat-bites', name: 'Snacks and Desserts', slug: 'snacks-and-desserts', displayOrder: 8, icon: 'snacks-dessert.png' },
+  { categoryId: 'cat-coffee', name: 'Coffee', slug: 'coffee', displayOrder: 1, icon: 'coffee.webp' },
+  { categoryId: 'cat-milk', name: 'Milk Base', slug: 'milk-base', displayOrder: 2, icon: 'milk-based.webp' },
+  { categoryId: 'cat-matcha', name: 'Matcha - Choco', slug: 'matcha-choco', displayOrder: 3, icon: 'matcha.webp' },
+  { categoryId: 'cat-non', name: 'Tea Series', slug: 'tea-series', displayOrder: 4, icon: 'tea.webp' },
+  { categoryId: 'cat-refreshing', name: 'Refreshing Drinks', slug: 'refreshing-drinks', displayOrder: 5, icon: 'refreshing-drinks.webp' },
+  { categoryId: 'cat-cold', name: 'Cold Drinks', slug: 'cold-drinks', displayOrder: 6, icon: 'frappe.webp' },
+  { categoryId: 'cat-food', name: 'Main Food', slug: 'main-food', displayOrder: 7, icon: 'food.webp' },
+  { categoryId: 'cat-bites', name: 'Snacks and Desserts', slug: 'snacks-and-desserts', displayOrder: 8, icon: 'snacks-dessert.webp' },
 ];
 
 type SeedProduct = {
@@ -215,15 +241,6 @@ const PHOTOS = [
   { photoId: 'photo-8', visitorName: 'Anonymous', caption: null, imageUrl: '/images/raccoon/wall/group.jpg', status: 'APPROVED' as const, createdAt: new Date('2026-09-27T10:15:00Z') },
 ];
 
-const ADMINS = [
-  {
-    adminId: 'admin-1',
-    name: 'Default Admin',
-    email: 'admin@raccooncoffee.id',
-    passwordHash: '$2b$10$eXPd1dGcCM2TFGDQWc7tJuplor7MgxvpTsGJ5Noxl8TLDDETZ37Yu', // password123
-  },
-];
-
 // Legacy/demo products from the old four-category mock menu. They stay in the
 // table as INACTIVE instead of being deleted so nothing is destroyed, and so
 // an admin can reactivate them.
@@ -249,14 +266,49 @@ const RETIRED_PRODUCT_IDS = [
   'prod-6',
 ];
 
-async function main() {
-  for (const admin of ADMINS) {
-    await prisma.admin.upsert({
-      where: { email: admin.email },
-      update: { name: admin.name, passwordHash: admin.passwordHash },
-      create: admin,
-    });
+async function bootstrapAdmin() {
+  const hasEmail = hasEnv(SEED_ADMIN_EMAIL);
+  const hasPassword = hasEnv(SEED_ADMIN_PASSWORD);
+
+  // Neither set: fresh/demo seed without admin bootstrap. Safe no-op.
+  if (!hasEmail && !hasPassword) {
+    console.log(
+      'Seed: SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD not set — skipping admin bootstrap.',
+    );
+    return;
   }
+
+  // Half-configured: refuse rather than guess.
+  if (!hasEmail || !hasPassword) {
+    throw new Error(
+      'Seed: SEED_ADMIN_EMAIL and SEED_ADMIN_PASSWORD must be set together to bootstrap the first admin.',
+    );
+  }
+
+  const email = SEED_ADMIN_EMAIL as string;
+  const password = SEED_ADMIN_PASSWORD as string;
+
+  // Create-only. Never update an existing admin, so re-seeding cannot reset a
+  // password the operator has since rotated.
+  const existing = await prisma.admin.findUnique({ where: { email } });
+  if (existing) {
+    console.log(
+      `Seed: admin ${email} already exists — leaving credentials unchanged.`,
+    );
+    return;
+  }
+
+  // Hash at runtime; the plaintext is never persisted or logged.
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.admin.create({
+    data: { name: SEED_ADMIN_NAME, email, passwordHash },
+  });
+
+  console.log(`Seed: created first admin ${email}.`);
+}
+
+async function main() {
+  await bootstrapAdmin();
 
   for (const branch of BRANCHES) {
     await prisma.branch.upsert({

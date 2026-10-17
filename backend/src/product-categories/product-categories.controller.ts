@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ProductCategoriesService } from './product-categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { PaginationQueryDto } from '../common/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('product-categories')
@@ -9,8 +10,8 @@ export class ProductCategoriesController {
   constructor(private readonly service: ProductCategoriesService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query() query: PaginationQueryDto) {
+    return this.service.findAll(query);
   }
 
   @Get(':id')

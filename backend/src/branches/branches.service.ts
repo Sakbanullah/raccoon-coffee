@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
+import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
 
 const BRANCH_SELECT = {
   branchId: true,
@@ -23,12 +24,29 @@ const BRANCH_SELECT = {
 export class BranchesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findActive() {
-    const branches = await this.prisma.branch.findMany({
-      where: { isActive: true },
-      select: BRANCH_SELECT,
-    });
-    return { data: branches, meta: { total: branches.length } };
+  async findActive(pagination?: PaginationQueryDto) {
+    const where = { isActive: true };
+    // No page/limit params → legacy full list.
+    if (!pagination?.page && !pagination?.limit) {
+      const branches = await this.prisma.branch.findMany({
+        where,
+        select: BRANCH_SELECT,
+      });
+      return { data: branches, meta: { total: branches.length } };
+    }
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 12;
+    const [total, branches] = await this.prisma.$transaction([
+      this.prisma.branch.count({ where }),
+      this.prisma.branch.findMany({
+        where,
+        select: BRANCH_SELECT,
+        orderBy: { name: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+    return { data: branches, meta: paginationMeta(total, page, limit) };
   }
 
   async findAll() {

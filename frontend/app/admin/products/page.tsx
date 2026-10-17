@@ -5,6 +5,7 @@ import { ImageIcon, Package, Plus, Search, X } from "lucide-react";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { EmptyState } from "@/components/admin/Overview";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/api";
 import type { Product, ProductCategory, ProductStatus } from "@/types";
 
 interface ProductFormState {
@@ -50,7 +51,7 @@ const checkImageFile = (file: File): string | null => {
 const uploadProductImage = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append("image", file);
-  const res = await fetch("/api/products/upload-image", {
+  const res = await apiFetch("/api/products/upload-image", {
     method: "POST",
     body: formData,
   });
@@ -258,7 +259,7 @@ export default function ProductsPage() {
         ...(imageUrl !== undefined && { imageUrl }),
       };
 
-      const res = await fetch(
+      const res = await apiFetch(
         editing ? `/api/products/${editing.productId}` : "/api/products",
         {
           method: editing ? "PATCH" : "POST",
@@ -297,7 +298,7 @@ export default function ProductsPage() {
       ),
     );
     try {
-      const res = await fetch(`/api/products/${product.productId}`, {
+      const res = await apiFetch(`/api/products/${product.productId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: next }),
@@ -321,7 +322,7 @@ export default function ProductsPage() {
     const id = confirmingDelete.productId;
     setDeletingId(id);
     try {
-      const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      const res = await apiFetch(`/api/products/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
       setProducts((prev) => prev.filter((p) => p.productId !== id));
       setConfirmingDelete(null);

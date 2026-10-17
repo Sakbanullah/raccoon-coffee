@@ -16,9 +16,10 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UPLOAD_DIR, imageUploadInterceptor, uploadedFilenamePattern } from '../uploads/upload.config';
+import { UPLOAD_DIR, imageContentValidationInterceptor, imageUploadInterceptor, uploadedFilenamePattern } from '../uploads/upload.config';
 import { SiteImagesService } from './site-images.service';
 import { FindSiteImagesQueryDto } from './dto/find-site-images-query.dto';
+import { PaginationQueryDto } from '../common/pagination-query.dto';
 import { CreateSiteImageDto } from './dto/create-site-image.dto';
 import { UpdateSiteImageDto } from './dto/update-site-image.dto';
 
@@ -31,8 +32,8 @@ export class SiteImagesController {
 
   /** Public: visible images for one landing-page section. */
   @Get()
-  findPublic(@Query() query: FindSiteImagesQueryDto) {
-    return this.service.findPublic(query.section);
+  findPublic(@Query() query: FindSiteImagesQueryDto & PaginationQueryDto) {
+    return this.service.findPublic(query.section, query);
   }
 
   /** Admin: visible and hidden images for one section. */
@@ -45,7 +46,9 @@ export class SiteImagesController {
   /** Admin: upload and register (or replace) a section image. */
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(imageUploadInterceptor(STORAGE_PREFIX))
+  // Order matters: multer stages the file first, then the content check decides
+  // whether the bytes may be kept.
+  @UseInterceptors(imageUploadInterceptor(STORAGE_PREFIX), imageContentValidationInterceptor(STORAGE_PREFIX))
   create(@Body() dto: CreateSiteImageDto, @UploadedFile() file?: Express.Multer.File) {
     return this.service.create(dto.section, dto.slot, dto.altText, file);
   }
@@ -70,6 +73,9 @@ export class SiteImagesController {
     if (!uploadedFilenamePattern(STORAGE_PREFIX).test(filename)) {
       throw new BadRequestException('Invalid filename');
     }
+    // Filenames are unique per upload (prefix-timestamp-random), so a given URL
+    // is immutable. Safe to cache aggressively: a replaced image gets a new URL.
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.sendFile(filename, { root: UPLOAD_DIR }, (err) => {
       if (err) {
         return res.status(404).send();

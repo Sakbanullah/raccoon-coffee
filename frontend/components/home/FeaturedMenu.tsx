@@ -2,26 +2,26 @@
 
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Product, ProductCategory } from "../../types";
 import Reveal from "../ui/Reveal";
 
 const CATEGORY_ICONS: Record<string, { src: string; alt: string }> = {
-  "cat-coffee": { src: "/images/menu-icons/coffee.png", alt: "Coffee" },
-  "cat-milk": { src: "/images/menu-icons/milk-based.png", alt: "Milk Base" },
-  "cat-matcha": { src: "/images/menu-icons/matcha.png", alt: "Matcha - Choco" },
-  "cat-non": { src: "/images/menu-icons/tea.png", alt: "Tea Series" },
-  "cat-refreshing": { src: "/images/menu-icons/refreshing-drinks.png", alt: "Refreshing Drinks" },
-  "cat-cold": { src: "/images/menu-icons/frappe.png", alt: "Cold Drinks" },
-  "cat-food": { src: "/images/menu-icons/food.png", alt: "Main Food" },
-  "cat-bites": { src: "/images/menu-icons/snacks-dessert.png", alt: "Snacks and Desserts" },
+  "cat-coffee": { src: "/images/menu-icons/coffee.webp", alt: "Coffee" },
+  "cat-milk": { src: "/images/menu-icons/milk-based.webp", alt: "Milk Base" },
+  "cat-matcha": { src: "/images/menu-icons/matcha.webp", alt: "Matcha - Choco" },
+  "cat-non": { src: "/images/menu-icons/tea.webp", alt: "Tea Series" },
+  "cat-refreshing": { src: "/images/menu-icons/refreshing-drinks.webp", alt: "Refreshing Drinks" },
+  "cat-cold": { src: "/images/menu-icons/frappe.webp", alt: "Cold Drinks" },
+  "cat-food": { src: "/images/menu-icons/food.webp", alt: "Main Food" },
+  "cat-bites": { src: "/images/menu-icons/snacks-dessert.webp", alt: "Snacks and Desserts" },
 };
 
 const FALLBACK_IMAGE = "/images/menu-placeholder.svg";
 
 export default function FeaturedMenu() {
   const [categories, setCategories] = useState<ProductCategory[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loadingCats, setLoadingCats] = useState(true);
   const [loadingProds, setLoadingProds] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,19 +53,20 @@ export default function FeaturedMenu() {
     return () => controller.abort();
   }, []);
 
-  // Load products when active category changes
+  // Load all public products once on mount. The public endpoint already
+  // filters to ACTIVE + visible and orders by displayOrder; category
+  // selection is done locally so switching tabs does not refetch.
   useEffect(() => {
-    if (!activeCategory) return;
     const controller = new AbortController();
     const loadProducts = async () => {
       setLoadingProds(true);
       setError(null);
       try {
-        const res = await fetch(`/api/products?category=${activeCategory}&public=true`, { signal: controller.signal });
+        const res = await fetch("/api/products?public=true", { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = (await res.json()) as { data?: Product[] };
-        const items = json?.data?.filter((p) => p.status === "ACTIVE" && p.isVisible).slice(0, 5) ?? [];
-        setProducts(items);
+        const items = json?.data?.filter((p) => p.status === "ACTIVE" && p.isVisible) ?? [];
+        setAllProducts(items);
       } catch (e) {
         if (!controller.signal.aborted) setError("Menu gagal dimuat.");
       } finally {
@@ -74,7 +75,14 @@ export default function FeaturedMenu() {
     };
     void loadProducts();
     return () => controller.abort();
-  }, [activeCategory]);
+  }, []);
+
+  // Products for the active category, capped at five like the previous
+  // per-category fetch did with slice(0, 5).
+  const products = useMemo(
+    () => allProducts.filter((p) => p.categoryId === activeCategory).slice(0, 5),
+    [allProducts, activeCategory],
+  );
 
   const selectCategory = (categoryId: string) => {
     setActiveCategory(categoryId);

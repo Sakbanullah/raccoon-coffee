@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
 import { IMAGE_STORAGE } from '../uploads/uploads.module';
 import { ImageStorage } from '../uploads/image-storage.service';
 import {
@@ -36,16 +37,31 @@ export class SiteImagesService {
   ) {}
 
   /** Public read: visible images only, for a validated section. */
-  async findPublic(section: string) {
+  async findPublic(section: string, pagination?: PaginationQueryDto) {
     const sectionKey = this.assertSection(section);
-
-    const images = await this.prisma.siteImage.findMany({
-      where: { sectionKey, isVisible: true },
-      select: SITE_IMAGE_SELECT,
-      orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
-    });
-
-    return { data: images, meta: { total: images.length } };
+    const where = { sectionKey, isVisible: true };
+    // No page/limit params → legacy full list (server-side homepage fetch relies on this).
+    if (!pagination?.page && !pagination?.limit) {
+      const images = await this.prisma.siteImage.findMany({
+        where,
+        select: SITE_IMAGE_SELECT,
+        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
+      });
+      return { data: images, meta: { total: images.length } };
+    }
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 12;
+    const [total, images] = await this.prisma.$transaction([
+      this.prisma.siteImage.count({ where }),
+      this.prisma.siteImage.findMany({
+        where,
+        select: SITE_IMAGE_SELECT,
+        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'asc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+    return { data: images, meta: paginationMeta(total, page, limit) };
   }
 
   /** Admin read: visible and hidden images for a validated section. */

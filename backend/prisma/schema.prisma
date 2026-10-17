@@ -42,6 +42,10 @@ model Admin {
   name         String   @db.VarChar(255)
   email        String   @unique @db.VarChar(255)
   passwordHash String   @map("password_hash") @db.VarChar(255)
+  // Session revocation counter (H-2). Embedded in the JWT as `ver` and compared
+  // against this column on every authenticated request; incrementing it
+  // invalidates every token previously issued to this admin.
+  tokenVersion Int      @default(0) @map("token_version")
   createdAt    DateTime @default(now()) @map("created_at") @db.DateTime()
   updatedAt    DateTime @updatedAt @map("updated_at") @db.DateTime()
 

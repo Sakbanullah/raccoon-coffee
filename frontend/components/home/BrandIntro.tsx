@@ -16,11 +16,11 @@ export default function BrandIntro({ images }: { images: SiteImage[] }) {
             <span aria-hidden="true" className="mr-2">✦</span>
             Cerita Kami
           </p>
-          <h2 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-[1.04] text-ink">
+          <h2 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.04] text-ink">
             Lebih dari sekadar{" "}
             <em className="italic text-coffee">secangkir kopi.</em>
           </h2>
-          <p className="mt-6 max-w-xl text-lg sm:text-xl text-ink/75 leading-relaxed font-light">
+          <p className="mt-8 max-w-xl text-lg sm:text-xl text-ink/75 leading-relaxed font-light">
             Raccoon lahir dari keinginan sederhana: menyediakan tempat yang nyaman untuk menikmati kopi, bertemu teman, bekerja sebentar, atau sekadar menikmati waktu luang.
           </p>
           <div className="mt-8 flex items-center gap-6">
@@ -49,6 +49,7 @@ export default function BrandIntro({ images }: { images: SiteImage[] }) {
               src={primary?.imageUrl ?? "/images/raccoon/atmosphere/interior.jpg"}
               alt={primary?.altText || "Raccoon interior atmosphere"}
               fill
+              sizes="(min-width: 768px) 42vw, 100vw"
               className="object-cover"
             />
           </div>

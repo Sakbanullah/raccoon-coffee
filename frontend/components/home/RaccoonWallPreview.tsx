@@ -5,12 +5,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Reveal from "../ui/Reveal";
 import { FileUploadCard } from "../ui/file-upload-card";
-import PolaroidLineCarousel from "../ui/polaroid-line-carousel";
+import RaccoonWallRotator from "./RaccoonWallRotator";
 import { PhotoUpload } from "../../types";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif"];
-const WALL_MAX = 8;
+/** Pool fetched in one request: the 9 on the line plus spares to rotate through. */
+const WALL_POOL = 30;
 
 export default function RaccoonWallPreview() {
   const [photos, setPhotos] = useState<PhotoUpload[] | null>(null);
@@ -21,13 +22,13 @@ export default function RaccoonWallPreview() {
 
     const load = async () => {
       try {
-        const res = await fetch("/api/photos", { signal: controller.signal });
+        const res = await fetch(`/api/photos?limit=${WALL_POOL}`, { signal: controller.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const json = (await res.json()) as { data?: PhotoUpload[] };
 
         if (Array.isArray(json?.data)) {
-          setPhotos(json.data.slice(0, WALL_MAX));
+          setPhotos(json.data.slice(0, WALL_POOL));
         } else {
           setPhotos([]);
         }
@@ -94,20 +95,7 @@ export default function RaccoonWallPreview() {
           </Reveal>
         ) : (
           <Reveal delay={0.05} className="mt-14">
-            <PolaroidLineCarousel
-              slides={photos.map((p) => ({ image: p.imageUrl }))}
-              height="max(60vh, 24rem)"
-              cardWidth={300}
-              sag={46}
-              swing={1}
-              autoplay={4500}
-              string="#8a7f72"
-              background="#F9F1E3"
-              ink="#1F261F"
-              showUploadCard={true}
-              onUploadClick={() => setOpen(true)}
-              uploadLabel="Bagikan momenmu"
-            />
+            <RaccoonWallRotator photos={photos} onUploadClick={() => setOpen(true)} />
           </Reveal>
         )}
       </div>

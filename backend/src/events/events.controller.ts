@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, ParseUUIDPipe, Query } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
+import { PaginationQueryDto } from '../common/pagination-query.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('events')
@@ -9,8 +10,8 @@ export class EventsController {
   constructor(private readonly service: EventsService) {}
 
   @Get()
-  findPublished() {
-    return this.service.findPublished();
+  findPublished(@Query() query: PaginationQueryDto) {
+    return this.service.findPublished(query);
   }
 
   @Get(':id')

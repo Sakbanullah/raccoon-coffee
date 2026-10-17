@@ -94,6 +94,7 @@ const ExpandableGallery: React.FC<ExpandableGalleryProps> = ({
               alt={`Gallery image ${index + 1}`}
               className="w-full h-full object-cover"
               loading="lazy"
+              decoding="async"
             />
             <motion.div
               className="absolute inset-0 bg-black"

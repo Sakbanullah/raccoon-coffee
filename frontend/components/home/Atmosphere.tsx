@@ -14,8 +14,11 @@ const FALLBACK_IMAGES = [
 ];
 
 export default function Atmosphere({ images: siteImages }: { images: SiteImage[] }) {
-  // Gallery slot: visible images already arrive ordered by displayOrder.
-  const gallery = siteImages.filter((i) => i.slotKey === "gallery");
+  // Gallery slot: visible images ordered by displayOrder ascending, capped at 6.
+  const gallery = siteImages
+    .filter((i) => i.slotKey === "gallery")
+    .sort((a, b) => a.displayOrder - b.displayOrder)
+    .slice(0, 6);
   const images = gallery.length > 0 ? gallery.map((i) => i.imageUrl) : FALLBACK_IMAGES;
   return (
     <section id="atmosphere" className="relative bg-cream py-20 text-ink sm:py-28 overflow-hidden">

@@ -4,8 +4,7 @@ import { FindProductsQueryDto } from './dto/find-products-query.dto';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { UPLOAD_DIR, uploadedFilenamePattern } from '../uploads/upload.config';
-import { imageUploadInterceptor } from '../uploads/upload.config';
+import { UPLOAD_DIR, imageContentValidationInterceptor, imageUploadInterceptor, uploadedFilenamePattern } from '../uploads/upload.config';
 import { Response } from 'express';
 
 @Controller('products')
@@ -14,7 +13,7 @@ export class ProductsController {
 
   @Get()
   findAll(@Query() query: FindProductsQueryDto) {
-    return this.service.findAll({ categoryId: query.category, publicOnly: query.public === 'true' });
+    return this.service.findAll({ categoryId: query.category, publicOnly: query.public === 'true' }, query);
   }
 
   @Get(':id')
@@ -44,7 +43,9 @@ export class ProductsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('upload-image')
-  @UseInterceptors(imageUploadInterceptor('product'))
+  // Order matters: multer stages the file first, then the content check decides
+  // whether the bytes may be kept.
+  @UseInterceptors(imageUploadInterceptor('product'), imageContentValidationInterceptor('product'))
   uploadProductImage(@UploadedFile() file?: Express.Multer.File) {
     return this.service.storeImage(file);
   }
@@ -54,6 +55,8 @@ export class ProductsController {
     if (!uploadedFilenamePattern('product').test(filename)) {
       throw new BadRequestException('Invalid filename');
     }
+    // Unique per-upload filename => immutable URL, safe to cache aggressively.
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     res.sendFile(filename, { root: UPLOAD_DIR }, (err) => {
       if (err) {
         return res.status(404).send();

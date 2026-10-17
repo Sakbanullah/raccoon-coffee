@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateStoryDto } from './dto/update-story.dto';
+import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
 
 const STORY_PUBLIC_SELECT = {
   storyId: true,
@@ -18,13 +19,30 @@ const STORY_PUBLIC_SELECT = {
 export class StoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findPublished() {
-    const stories = await this.prisma.story.findMany({
-      where: { status: 'PUBLISHED' },
-      select: STORY_PUBLIC_SELECT,
-      orderBy: { publishedAt: 'desc' },
-    });
-    return { data: stories, meta: { total: stories.length } };
+  async findPublished(pagination?: PaginationQueryDto) {
+    const where = { status: 'PUBLISHED' as const };
+    // No page/limit params → legacy full list.
+    if (!pagination?.page && !pagination?.limit) {
+      const stories = await this.prisma.story.findMany({
+        where,
+        select: STORY_PUBLIC_SELECT,
+        orderBy: { publishedAt: 'desc' },
+      });
+      return { data: stories, meta: { total: stories.length } };
+    }
+    const page = pagination.page ?? 1;
+    const limit = pagination.limit ?? 12;
+    const [total, stories] = await this.prisma.$transaction([
+      this.prisma.story.count({ where }),
+      this.prisma.story.findMany({
+        where,
+        select: STORY_PUBLIC_SELECT,
+        orderBy: { publishedAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+    ]);
+    return { data: stories, meta: paginationMeta(total, page, limit) };
   }
 
   async findOne(id: string) {
