@@ -11,7 +11,7 @@ export default function AdminOverviewPage() {
   const counts = useOverviewCounts();
 
   return (
-    <section className="mx-auto max-w-4xl space-y-8 p-4">
+    <div className="space-y-6">
       <AdminHeader
         title="Dashboard Overview"
         description="Admin console – manage menu, locations, content and photo moderation."
@@ -48,6 +48,6 @@ export default function AdminOverviewPage() {
           <QuickActionLink label="Review photos" href="/admin/raccoon-wall" hint="Raccoon Wall moderation" />
         </div>
       </section>
-    </section>
+    </div>
   );
 }

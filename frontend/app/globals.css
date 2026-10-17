@@ -133,6 +133,29 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
 }
 
+/* Admin glassmorphism. Colors come from the existing palette:
+   forest #174D3D, forest-deep #10382D, brand-primary #025244, gold #C69A4E. */
+.admin-shell-bg {
+  background-color: theme("colors.background");
+  background-image:
+    radial-gradient(60rem 40rem at 6% 0%, rgba(23, 77, 61, 0.55), transparent 62%),
+    radial-gradient(45rem 35rem at 94% 10%, rgba(2, 82, 68, 0.42), transparent 66%),
+    radial-gradient(42rem 32rem at 72% 102%, rgba(198, 154, 78, 0.16), transparent 70%);
+}
+
+.admin-glass {
+  background-image: linear-gradient(
+    165deg,
+    rgba(23, 77, 61, 0.75) 0%,
+    rgba(16, 56, 45, 0.68) 48%,
+    rgba(2, 82, 68, 0.62) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
 /* Keyboard focus visibility across dark and light sections. */
 :where(a, button, input, textarea, summary, [role="button"]):focus-visible {
   outline: 2px solid theme("colors.gold.DEFAULT");

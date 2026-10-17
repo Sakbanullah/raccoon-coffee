@@ -12,9 +12,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="admin-shell-bg min-h-screen text-foreground">
       <AdminSidebar />
-      <main className="p-5 sm:p-6 lg:ml-64 lg:p-8">{children}</main>
+      <main className="p-5 sm:p-6 lg:ml-[18.25rem] lg:p-8">{children}</main>
     </div>
   );
 }
