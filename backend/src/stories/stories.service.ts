@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateStoryDto } from './dto/create-story.dto';
 import { UpdateStoryDto } from './dto/update-story.dto';
 import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
+import { ImageCleanupService } from '../uploads/image-cleanup.service';
 
 const STORY_PUBLIC_SELECT = {
   storyId: true,
@@ -17,7 +18,10 @@ const STORY_PUBLIC_SELECT = {
 
 @Injectable()
 export class StoriesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cleanup: ImageCleanupService,
+  ) {}
 
   async findPublished(pagination?: PaginationQueryDto) {
     const where = { status: 'PUBLISHED' as const };
@@ -77,7 +81,7 @@ export class StoriesService {
   }
 
   async update(id: string, dto: UpdateStoryDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
 
     if (dto.branchId) {
       await this.assertBranchExists(dto.branchId);
@@ -96,15 +100,21 @@ export class StoriesService {
       },
       select: STORY_PUBLIC_SELECT,
     });
+
+    // Replacement: only after the row points at the new URL may the old file go.
+    if (existing.data.coverImageUrl && existing.data.coverImageUrl !== story.coverImageUrl) {
+      await this.cleanup.removeIfUnreferenced(existing.data.coverImageUrl);
+    }
     return { data: story };
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
     const story = await this.prisma.story.delete({
       where: { storyId: id },
       select: STORY_PUBLIC_SELECT,
     });
+    await this.cleanup.removeIfUnreferenced(existing.data.coverImageUrl);
     return { data: story };
   }
 

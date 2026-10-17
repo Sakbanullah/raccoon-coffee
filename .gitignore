@@ -43,7 +43,7 @@ credentials.json
 
 # User Uploads
 backend/uploads/
-uploads/
+/uploads/
 
 docs/
 
@@ -52,3 +52,5 @@ PROJECT_CONTEXT.md
 
 # Local audit and temporary test files
 /backend/test/
+
+/temporary file tempoary/

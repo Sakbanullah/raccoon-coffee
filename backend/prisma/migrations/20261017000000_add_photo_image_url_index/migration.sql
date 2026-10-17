@@ -1,0 +1,30 @@
+-- AddIndex: reference-count lookup for the image cleanup path (M-9).
+-- Additive only. No existing table, column, index, or row is modified.
+--
+-- `ImageCleanupService.removeIfUnreferenced` (uploads/image-cleanup.service.ts)
+-- and `SiteImagesService.removeFileIfUnreferenced` (site-images/site-images.service.ts)
+-- both run `SELECT COUNT(*) FROM photo_upload WHERE image_url = ?`.
+-- `photo_upload` is the only image-bearing table that grows without bound
+-- (visitor uploads, no retention), so it is the only one indexed.
+-- product/story/event are admin-managed and small; site_image is bounded by its
+-- section/slot design. See temporary/backend-audit.md (M-9).
+--
+-- Key length: `image_url` is VARCHAR(500) under utf8mb4 (init migration
+-- `20261005074931_init`, `DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`),
+-- so a full-column key is at most 2000 bytes. InnoDB accepts 3072-byte keys with
+-- ROW_FORMAT=DYNAMIC or COMPRESSED, the default since MySQL 5.7.9 / MariaDB 10.2.3.
+-- This repository records no row-format override, and the schema/migrations do not
+-- set one, so the server default applies.
+--
+-- If the target server is still on COMPACT/REDUNDANT (767-byte key limit), the
+-- statement below fails with ER_TOO_LONG_KEY. In that case deploy the prefix
+-- variant instead (191 * 4 = 764 bytes); equality lookups stay correct because
+-- MySQL re-checks the full value after the prefix match:
+--   CREATE INDEX `photo_upload_image_url_idx` ON `photo_upload` (`image_url`(191));
+--
+-- Prisma schema is intentionally NOT updated with `@@index([imageUrl])`: the
+-- `site_image` table has a MySQL generated column (`single_slot_key`) that Prisma
+-- 6.19.0 cannot model, so `prisma migrate dev` is already unsafe against this
+-- database (schema.prisma:205-213). Migrations are the source of truth here;
+-- `prisma migrate deploy` applies this index without needing schema drift.
+CREATE INDEX `photo_upload_image_url_idx` ON `photo_upload` (`image_url`);

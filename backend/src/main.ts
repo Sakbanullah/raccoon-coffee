@@ -29,8 +29,10 @@ async function bootstrap(): Promise<void> {
   }
 
   // Create the upload directory up front so a storage misconfiguration
-  // surfaces at startup, not as a 500 on the first upload.
-  ensureUploadDir();
+  // surfaces at startup, not as a 500 on the first upload. The resolved
+  // absolute path is logged (M-7) so the operator can see where files land.
+  const uploadDir = ensureUploadDir();
+  console.log('Upload directory (absolute):', uploadDir);
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   // Only trust X-Forwarded-For from the number of reverse-proxy hops set by the

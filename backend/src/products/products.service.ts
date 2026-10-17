@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
+import { ImageCleanupService } from '../uploads/image-cleanup.service';
 
 const PRODUCT_SELECT = {
   productId: true,
@@ -21,7 +22,10 @@ const PRODUCT_SELECT = {
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cleanup: ImageCleanupService,
+  ) {}
 
   async findAll(filter?: { categoryId?: string; publicOnly?: boolean }, pagination?: PaginationQueryDto) {
     const where = {
@@ -90,7 +94,7 @@ export class ProductsService {
   }
 
   async update(id: string, dto: UpdateProductDto) {
-    await this.findOne(id);
+    const existing = await this.findOne(id);
     if (dto.categoryId) {
       await this.assertCategoryExists(dto.categoryId);
     }
@@ -115,12 +119,18 @@ export class ProductsService {
       },
       select: PRODUCT_SELECT,
     });
+
+    // Replacement: only after the row points at the new URL may the old file go.
+    if (existing.data.imageUrl && existing.data.imageUrl !== product.imageUrl) {
+      await this.cleanup.removeIfUnreferenced(existing.data.imageUrl);
+    }
     return { data: product };
   }
 
   async remove(id: string) {
     const existing = await this.findOne(id);
     await this.prisma.product.delete({ where: { productId: id } });
+    await this.cleanup.removeIfUnreferenced(existing.data.imageUrl);
     return { data: existing.data };
   }
 

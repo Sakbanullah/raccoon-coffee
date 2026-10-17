@@ -4,6 +4,9 @@
  * 19:30 UTC round-trips as "19:30" regardless of the server timezone.
  */
 
+/** 24-hour "HH:mm" — the only accepted wire format for `@db.Time()` fields (M-3). */
+export const TIME_OF_DAY_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 /** Prisma Date -> "HH:mm" (or null if missing/invalid). */
 export function formatTime(date: Date | string | null | undefined): string | null {
   if (!date) {

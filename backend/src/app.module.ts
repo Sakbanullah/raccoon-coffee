@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+﻿import { Module } from '@nestjs/common';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { PrismaExceptionFilter } from './common/prisma-exception.filter';
 import { PrismaModule } from './prisma/prisma.module';
 import { ShutdownModule } from './shutdown/shutdown.module';
 import { AdminModule } from './admin/admin.module';
@@ -41,6 +42,11 @@ import { HealthModule } from './health/health.module';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    {
+      provide: APP_FILTER,
+      useClass: PrismaExceptionFilter,
+    },
   ],
 })
 export class AppModule {}
+

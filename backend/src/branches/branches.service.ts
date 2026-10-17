@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { PaginationQueryDto, paginationMeta } from '../common/pagination-query.dto';
+import { parseTime } from '../common/time.util';
 
 const BRANCH_SELECT = {
   branchId: true,
@@ -26,7 +27,7 @@ export class BranchesService {
 
   async findActive(pagination?: PaginationQueryDto) {
     const where = { isActive: true };
-    // No page/limit params → legacy full list.
+    // No page/limit params â†’ legacy full list.
     if (!pagination?.page && !pagination?.limit) {
       const branches = await this.prisma.branch.findMany({
         where,
@@ -78,8 +79,8 @@ export class BranchesService {
         postalCode: dto.postalCode ?? null,
         latitude: dto.latitude ?? null,
         longitude: dto.longitude ?? null,
-        openingTime: dto.openingTime ?? null,
-        closingTime: dto.closingTime ?? null,
+        openingTime: parseTime(dto.openingTime) ?? null,
+        closingTime: parseTime(dto.closingTime) ?? null,
         phone: dto.phone ?? null,
         mapsUrl: dto.mapsUrl ?? null,
         isActive: dto.isActive ?? true,
@@ -101,8 +102,8 @@ export class BranchesService {
         ...(dto.postalCode !== undefined && { postalCode: dto.postalCode }),
         ...(dto.latitude !== undefined && { latitude: dto.latitude }),
         ...(dto.longitude !== undefined && { longitude: dto.longitude }),
-        ...(dto.openingTime !== undefined && { openingTime: dto.openingTime }),
-        ...(dto.closingTime !== undefined && { closingTime: dto.closingTime }),
+        ...(dto.openingTime !== undefined && { openingTime: parseTime(dto.openingTime) ?? null }),
+        ...(dto.closingTime !== undefined && { closingTime: parseTime(dto.closingTime) ?? null }),
         ...(dto.phone !== undefined && { phone: dto.phone }),
         ...(dto.mapsUrl !== undefined && { mapsUrl: dto.mapsUrl }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
@@ -121,3 +122,4 @@ export class BranchesService {
     return { data: branch };
   }
 }
+

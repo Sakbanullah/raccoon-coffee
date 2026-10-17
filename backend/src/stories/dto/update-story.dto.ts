@@ -1,5 +1,6 @@
 import { IsString, IsOptional, MaxLength, IsEnum, Matches } from 'class-validator';
 import { ContentStatus } from '@prisma/client';
+import { ValidateSlug } from './slug.validator';
 
 export class UpdateStoryDto {
   @IsString()
@@ -7,6 +8,9 @@ export class UpdateStoryDto {
   @MaxLength(255)
   title?: string;
 
+  // Same rule as CreateStoryDto (M-2): a PATCH must not be able to store a slug
+  // that POST would have rejected.
+  @ValidateSlug()
   @IsString()
   @IsOptional()
   @MaxLength(255)
