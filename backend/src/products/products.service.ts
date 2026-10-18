@@ -27,12 +27,17 @@ export class ProductsService {
     private readonly cleanup: ImageCleanupService,
   ) {}
 
-  async findAll(filter?: { categoryId?: string; publicOnly?: boolean }, pagination?: PaginationQueryDto) {
-    const where = {
-      ...(filter?.categoryId && { categoryId: filter.categoryId }),
-      // ponytail: public menu filter only; admin list still returns hidden/inactive rows.
-      ...(filter?.publicOnly && { status: 'ACTIVE' as const, isVisible: true }),
-    };
+  // Public menu: only published, visible products.
+  async findAll(filter?: { categoryId?: string }, pagination?: PaginationQueryDto) {
+    return this.list({ ...(filter?.categoryId && { categoryId: filter.categoryId }), status: 'ACTIVE' as const, isVisible: true }, pagination);
+  }
+
+  // Admin table: everything, including drafts and hidden rows.
+  async findAllForAdmin(pagination?: PaginationQueryDto) {
+    return this.list({}, pagination);
+  }
+
+  private async list(where: { categoryId?: string; status?: 'ACTIVE'; isVisible?: boolean }, pagination?: PaginationQueryDto) {
     // No page/limit params → legacy full list (admin tables rely on this).
     if (!pagination?.page && !pagination?.limit) {
       const products = await this.prisma.product.findMany({
@@ -58,6 +63,17 @@ export class ProductsService {
   }
 
   async findOne(id: string) {
+    const product = await this.prisma.product.findFirst({
+      where: { productId: id, status: 'ACTIVE', isVisible: true },
+      select: PRODUCT_SELECT,
+    });
+    if (!product) {
+      throw new NotFoundException('Product not found.');
+    }
+    return { data: product };
+  }
+
+  async findOneForAdmin(id: string) {
     const product = await this.prisma.product.findUnique({
       where: { productId: id },
       select: PRODUCT_SELECT,
@@ -94,7 +110,7 @@ export class ProductsService {
   }
 
   async update(id: string, dto: UpdateProductDto) {
-    const existing = await this.findOne(id);
+    const existing = await this.findOneForAdmin(id);
     if (dto.categoryId) {
       await this.assertCategoryExists(dto.categoryId);
     }
@@ -128,7 +144,7 @@ export class ProductsService {
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
+    const existing = await this.findOneForAdmin(id);
     await this.prisma.product.delete({ where: { productId: id } });
     await this.cleanup.removeIfUnreferenced(existing.data.imageUrl);
     return { data: existing.data };

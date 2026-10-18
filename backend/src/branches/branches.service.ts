@@ -59,6 +59,17 @@ export class BranchesService {
   }
 
   async findOne(id: string) {
+    const branch = await this.prisma.branch.findFirst({
+      where: { branchId: id, isActive: true },
+      select: BRANCH_SELECT,
+    });
+    if (!branch) {
+      throw new NotFoundException(`Branch ${id} not found.`);
+    }
+    return { data: branch };
+  }
+
+  async findOneForAdmin(id: string) {
     const branch = await this.prisma.branch.findUnique({
       where: { branchId: id },
       select: BRANCH_SELECT,
@@ -91,7 +102,7 @@ export class BranchesService {
   }
 
   async update(id: string, dto: UpdateBranchDto) {
-    await this.findOne(id);
+    await this.findOneForAdmin(id);
     const branch = await this.prisma.branch.update({
       where: { branchId: id },
       data: {
@@ -114,7 +125,7 @@ export class BranchesService {
   }
 
   async remove(id: string) {
-    await this.findOne(id);
+    await this.findOneForAdmin(id);
     const branch = await this.prisma.branch.delete({
       where: { branchId: id },
       select: BRANCH_SELECT,

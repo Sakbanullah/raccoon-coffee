@@ -52,6 +52,17 @@ export class EventsService {
   }
 
   async findOne(id: string) {
+    const event = await this.prisma.event.findFirst({
+      where: { eventId: id, status: 'PUBLISHED' },
+      select: EVENT_PUBLIC_SELECT,
+    });
+    if (!event) {
+      throw new NotFoundException(`Event ${id} not found.`);
+    }
+    return { data: event };
+  }
+
+  async findOneForAdmin(id: string) {
     const event = await this.prisma.event.findUnique({
       where: { eventId: id },
       select: EVENT_PUBLIC_SELECT,
@@ -85,7 +96,7 @@ export class EventsService {
   }
 
   async update(id: string, dto: UpdateEventDto) {
-    const existing = await this.findOne(id);
+    const existing = await this.findOneForAdmin(id);
 
     if (dto.branchId) {
       await this.assertBranchExists(dto.branchId);
@@ -115,7 +126,7 @@ export class EventsService {
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
+    const existing = await this.findOneForAdmin(id);
     const event = await this.prisma.event.delete({
       where: { eventId: id },
       select: EVENT_PUBLIC_SELECT,

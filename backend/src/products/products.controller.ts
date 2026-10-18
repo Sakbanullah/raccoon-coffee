@@ -13,7 +13,14 @@ export class ProductsController {
 
   @Get()
   findAll(@Query() query: FindProductsQueryDto) {
-    return this.service.findAll({ categoryId: query.category, publicOnly: query.public === 'true' }, query);
+    return this.service.findAll({ categoryId: query.category }, query);
+  }
+
+  // Admin-only list; must stay above `:id` so it is not captured as an ID.
+  @UseGuards(JwtAuthGuard)
+  @Get('admin')
+  findAllForAdmin(@Query() query: FindProductsQueryDto) {
+    return this.service.findAllForAdmin(query);
   }
 
   @Get(':id')

@@ -50,6 +50,17 @@ export class StoriesService {
   }
 
   async findOne(id: string) {
+    const story = await this.prisma.story.findFirst({
+      where: { storyId: id, status: 'PUBLISHED' },
+      select: STORY_PUBLIC_SELECT,
+    });
+    if (!story) {
+      throw new NotFoundException(`Story ${id} not found.`);
+    }
+    return { data: story };
+  }
+
+  async findOneForAdmin(id: string) {
     const story = await this.prisma.story.findUnique({
       where: { storyId: id },
       select: STORY_PUBLIC_SELECT,
@@ -81,7 +92,7 @@ export class StoriesService {
   }
 
   async update(id: string, dto: UpdateStoryDto) {
-    const existing = await this.findOne(id);
+    const existing = await this.findOneForAdmin(id);
 
     if (dto.branchId) {
       await this.assertBranchExists(dto.branchId);
@@ -109,7 +120,7 @@ export class StoriesService {
   }
 
   async remove(id: string) {
-    const existing = await this.findOne(id);
+    const existing = await this.findOneForAdmin(id);
     const story = await this.prisma.story.delete({
       where: { storyId: id },
       select: STORY_PUBLIC_SELECT,

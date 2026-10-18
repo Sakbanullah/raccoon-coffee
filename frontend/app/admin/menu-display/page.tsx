@@ -35,7 +35,7 @@ export default function MenuDisplayPage() {
     setAuthRequired(false);
     try {
       const [productsRes, categoriesRes] = await Promise.all([
-        fetch("/api/products", { cache: "no-store" }),
+        fetch("/api/products/admin", { cache: "no-store" }),
         fetch("/api/product-categories", { cache: "no-store" }),
       ]);
 
