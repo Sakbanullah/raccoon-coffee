@@ -33,6 +33,9 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
+  "overrides": {
+    "multer": "2.4.0"
+  },
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",

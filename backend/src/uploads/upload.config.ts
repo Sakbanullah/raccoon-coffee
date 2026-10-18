@@ -4,9 +4,10 @@ import {
   ExecutionContext,
   Injectable,
   NestInterceptor,
+  PayloadTooLargeException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { MulterError, diskStorage, type Options as MulterOptions } from 'multer';
 import { mkdirSync, readFileSync, renameSync } from 'fs';
 import { extname, join, resolve } from 'path';
 import { Observable, catchError, concatMap, from, throwError } from 'rxjs';
@@ -234,6 +235,41 @@ export function verifyUploadedImage(
 }
 
 /**
+ * Client-safe message per multer limit code.
+ *
+ * Nest's `FileInterceptor` translates the older multer messages itself, but
+ * multer 2.x added `LIMIT_FIELD_NESTING` (and others) that it does not know.
+ * Those reached the client as a generic 500. The mapping lives here, at the
+ * upload boundary, so it does not depend on a separately registered global
+ * exception filter being present in the running build.
+ */
+const MULTER_LIMIT_MESSAGES: Record<string, string> = {
+  LIMIT_FILE_SIZE: 'The uploaded file is too large.',
+  LIMIT_FILE_COUNT: 'Too many files were uploaded.',
+  LIMIT_UNEXPECTED_FILE: 'Unexpected file field.',
+  LIMIT_PART_COUNT: 'Too many multipart parts.',
+  LIMIT_FIELD_COUNT: 'Too many form fields.',
+  LIMIT_FIELD_KEY: 'A form field name is too long.',
+  LIMIT_FIELD_VALUE: 'A form field value is too long.',
+  LIMIT_FIELD_NESTING: 'Field name nesting is too deep.',
+  LIMIT_FIELD_ARRAY_INDEX: 'A form field array index is too large.',
+  MISSING_FIELD_NAME: 'A form field name is missing.',
+  INVALID_FIELD_NAME: 'A form field name is invalid.',
+  STREAM_DESTROYED: 'The upload stream was interrupted.',
+};
+
+/** Turn a multer limit error into an `HttpException`; anything else passes through. */
+function toUploadHttpException(error: unknown): unknown {
+  if (!(error instanceof MulterError)) return error;
+  // `@types/multer` predates the newer codes, so compare the runtime value as a string.
+  const code = String(error.code);
+  const message = MULTER_LIMIT_MESSAGES[code] ?? 'Invalid multipart upload.';
+  return code === 'LIMIT_FILE_SIZE'
+    ? new PayloadTooLargeException(message)
+    : new BadRequestException(message);
+}
+
+/**
  * Shared upload config for single image files.
  *
  * `prefix` namespaces stored filenames so each feature (Raccoon Wall, product
@@ -256,7 +292,18 @@ export function imageUploadInterceptor(prefix: string) {
   const uploadDir = resolve(UPLOAD_DIR);
   mkdirSync(uploadDir, { recursive: true });
 
-  return FileInterceptor('image', {
+  // Typed against multer itself: Nest's MulterOptions.limits predates
+  // `fieldNestingDepth`, but the option is passed through to busboy at runtime.
+  const limits: MulterOptions['limits'] = {
+    fileSize: IMAGE_MAX_BYTES,
+    files: 1,
+    fields: 10,
+    fieldNameSize: 100,
+    fieldNestingDepth: 2,
+    parts: 20,
+  };
+
+  const UploadInterceptor = FileInterceptor('image', {
     storage: diskStorage({
       destination: uploadDir,
       filename: (req, file, callback) => {
@@ -272,10 +319,24 @@ export function imageUploadInterceptor(prefix: string) {
       }
       callback(null, true);
     },
-    limits: {
-      fileSize: IMAGE_MAX_BYTES,
-    },
+    limits,
   });
+
+  // Multer raises its limit errors inside the middleware callback, and Nest's
+  // own translation only knows the older codes. Convert them here so every
+  // multipart limit (including `LIMIT_FIELD_NESTING`) answers 400/413 instead of
+  // an unhandled 500. No stack trace or client-supplied field name is exposed.
+  class UploadLimitInterceptor extends UploadInterceptor {
+    async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
+      try {
+        return await super.intercept(context, next);
+      } catch (error) {
+        throw toUploadHttpException(error);
+      }
+    }
+  }
+
+  return UploadLimitInterceptor;
 }
 
 /**
