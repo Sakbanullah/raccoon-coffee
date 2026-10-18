@@ -54,3 +54,9 @@ PROJECT_CONTEXT.md
 /backend/test/
 
 /temporary file tempoary/
+
+# Strix security audit artifacts (local only)
+/backend/.dyn/
+/backend/strix_runs/
+/backend/uploads-strix/
+/backend/*_strix.py
