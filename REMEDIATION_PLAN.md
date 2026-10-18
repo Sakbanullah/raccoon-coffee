@@ -7,19 +7,21 @@ Status terakhir diperbarui: **19 Oktober 2026**.
 Legenda status:
 
 - **IMPLEMENTED — MANUALLY VERIFIED**: kode ada dan perilakunya sudah diperiksa manual.
+- **IMPLEMENTED — PARTIALLY MANUALLY VERIFIED**: sebagian perilaku sudah diperiksa manual; sisa pemeriksaan belum dijalankan.
+- **IMPLEMENTED — NOT MANUALLY VERIFIED**: kode sudah diubah, perilaku belum diuji manual.
 - **NOT IMPLEMENTED**: belum ada perubahan kode.
 
 | Task | Status |
 | --- | --- |
 | 1.1 Multer + limits | IMPLEMENTED — MANUALLY VERIFIED |
-| 2.1 Reaper file orphan | NOT IMPLEMENTED |
+| 2.1 Reaper file orphan | IMPLEMENTED — MANUALLY VERIFIED |
 | 2.2 Sanitasi metadata foto | IMPLEMENTED — MANUALLY VERIFIED |
 | 2.3 Filter publikasi | IMPLEMENTED — MANUALLY VERIFIED |
 | 2.4 Login timing | IMPLEMENTED — MANUALLY VERIFIED |
-| 3.1 Revokasi logout | NOT IMPLEMENTED |
+| 3.1 Revokasi logout | IMPLEMENTED — PARTIALLY MANUALLY VERIFIED |
 | 3.2 `.gitignore` artefak Strix | IMPLEMENTED — MANUALLY VERIFIED (git check-ignore) |
 
-Lima task sudah diimplementasikan dan diverifikasi manual: 1.1, 2.2, 2.3, 2.4, dan 3.2. Task 2.1 dan 3.1 belum dikerjakan.
+Enam task sudah diimplementasikan dan diverifikasi manual: 1.1, 2.1, 2.2, 2.3, 2.4, dan 3.2. Task 3.1 sudah diimplementasikan dan sebagian besar perilakunya sudah diverifikasi manual pada 19 Oktober 2026 (backend port 3001): stale logout tidak mengeluarkan sesi aktif, dan logout dengan token aktif mencabut sesi tersebut (`GET /api/auth/me` → `401`). `Admin.tokenVersion = 9` berhasil dibaca setelah pengujian, tetapi nilai sebelum stale logout belum pernah diambil, sehingga klaim "tidak berubah akibat stale logout" **belum terverifikasi langsung**. Status tetap PARTIALLY MANUALLY VERIFIED.
 
 Catatan: pembaruan dokumen ini hanya mencatat status. Tidak ada build, typecheck, atau test suite yang dijalankan dalam sesi pembaruan ini.
 
@@ -56,15 +58,18 @@ Catatan koreksi terhadap draft awal (hasil verifikasi kode aktual):
 
 ## FASE 2: Medium (Data & Availability)
 
-- [ ] **Task 2.1: Reaper File Orphan (Disk Exhaustion)** (NOT IMPLEMENTED)
-  - Status: `backend/src/uploads/staging-reaper.service.ts` belum ada; `UploadsModule` belum mendaftarkan provider reaper.
-  - File: buat `backend/src/uploads/staging-reaper.service.ts`; daftarkan di `backend/src/uploads/uploads.module.ts` (`providers`).
-  - Aksi:
-    - **Tanpa** `@nestjs/schedule`. Pakai `OnModuleInit` + `setInterval(tick, 60 * 60 * 1000)` dan `OnModuleDestroy` untuk `clearInterval`; panggil `.unref()` pada timer supaya tidak menahan proses saat shutdown/test.
-    - `tick()`: `readdir(UPLOAD_DIR)`, filter `/\.upload$/`, `stat`, `unlink` jika `Date.now() - mtimeMs > 60 * 60 * 1000`. Best-effort: `ENOENT` diabaikan, error lain di-`logger.warn`.
-    - Ekstrak `sweepStaleStagingFiles(now?: number)` supaya bisa dipanggil langsung dari test tanpa menunggu interval.
-    - Log jumlah file yang dihapus per sweep (satu baris).
-  - Test yang direncanakan (belum dijalankan): buat file `wall-1-1.upload` dengan `mtime` 2 jam lalu + satu file `.jpg` valid → jalankan `sweepStaleStagingFiles()` → `.upload` hilang, `.jpg` utuh.
+- [x] **Task 2.1: Reaper File Orphan (Disk Exhaustion)** (IMPLEMENTED — MANUALLY VERIFIED)
+  - File: `backend/src/uploads/staging-reaper.service.ts` (baru); registrasi provider di `backend/src/uploads/uploads.module.ts`.
+  - Aksi (sesuai implementasi aktual):
+    - `StagingReaperService` mengimplementasikan `OnModuleInit` dan `OnModuleDestroy`. Saat init: satu sweep langsung, lalu `setInterval(..., 60 * 60 * 1000)`; timer di-`unref()` agar tidak menahan proses saat shutdown/test. Saat destroy: `clearInterval`.
+    - `sweepStaleStagingFiles(now = Date.now())` membaca `readdir(UPLOAD_DIR)` (dari `backend/src/uploads/upload.config.ts`), hanya memproses entry berakhiran `.upload`, lalu `stat` dan `unlink` bila entry adalah file dan `now - mtimeMs > 60 * 60 * 1000`.
+    - Hanya file staging `.upload` yang disentuh; gambar tersimpan (`.jpg`, `.png`, `.gif`) dan file lain tidak pernah dihapus.
+    - Best-effort: `ENOENT` pada direktori/file diabaikan, error lain di-`logger.warn`, dan sweep mengembalikan jumlah file yang dihapus. Satu baris log per sweep.
+    - Tanpa dependency baru (`@nestjs/schedule` tidak dipakai).
+  - Verifikasi manual (PASS), di direktori sementara terisolasi:
+    - File `.upload` berumur lebih dari satu jam → terhapus.
+    - File `.upload` baru → tetap ada.
+    - File `.jpg` → tetap ada.
   - Alasan tidak pakai `@Cron`: satu timer 1 jam tidak layak menambah dependency runtime.
 
 - [x] **Task 2.2: Sanitasi Input Metadata Foto (Stored XSS)** (IMPLEMENTED — MANUALLY VERIFIED)
@@ -99,15 +104,32 @@ Catatan koreksi terhadap draft awal (hasil verifikasi kode aktual):
 
 ## FASE 3: Low & Hardening
 
-- [ ] **Task 3.1: Perbaiki Revokasi Token di Logout** (NOT IMPLEMENTED)
-  - Status: `AuthService.revokeByToken` masih hanya memverifikasi signature dan `adminId`; klaim `ver` belum dibandingkan dengan `Admin.tokenVersion`.
-  - File: `backend/src/auth/auth.service.ts` (`revokeByToken`, baris 66–76).
-  - Aksi:
-    - Setelah `verifyAsync`, baca `Admin` by `adminId` (`select: { tokenVersion: true }`).
-    - Jika admin tidak ada, atau `payload.ver !== admin.tokenVersion`, **return** tanpa menaikkan `tokenVersion`.
-    - Jika cocok, panggil `revokeSessions(adminId)` seperti sekarang.
-    - Tipe payload: `{ adminId?: string; ver?: number }`; `ver` wajib integer, samakan dengan aturan `JwtAuthGuard`.
-  - Test yang direncanakan (belum dijalankan): token dengan `ver` lama → `POST /api/auth/logout` tidak menaikkan `tokenVersion` (tetap 5). Token dengan `ver` aktif → naik ke 6.
+- [x] **Task 3.1: Perbaiki Revokasi Token di Logout** (IMPLEMENTED — PARTIALLY MANUALLY VERIFIED)
+  - Root cause: `AuthService.revokeByToken` hanya memverifikasi signature dan `adminId`. Klaim `ver` tidak dibandingkan dengan `Admin.tokenVersion`, sehingga token yang sudah dicabut (mis. hasil tangkapan lama) tetap bisa menaikkan `tokenVersion` berulang kali dan mengeluarkan sesi aktif admin. Guard `JwtAuthGuard` sendiri sudah menolak token usang per request; celahnya hanya di jalur logout.
+  - File: `backend/src/auth/auth.service.ts` (`revokeByToken`).
+  - Aksi (sesuai implementasi aktual):
+    - Payload diverifikasi sebagai `{ adminId?: string; ver?: number }`.
+    - `adminId` non-string atau `ver` bukan integer → `return` tanpa perubahan.
+    - Baca `Admin` by `adminId` dengan `select: { tokenVersion: true }`. Admin tidak ada atau `payload.ver !== admin.tokenVersion` → `return`.
+    - Hanya bila cocok, panggil `revokeSessions(adminId)` (increment `tokenVersion`).
+    - Tidak ada perubahan pada `JwtAuthGuard`, `login`, controller, atau dependency.
+  - Skenario uji manual (dijalankan 19 Oktober 2026 pada backend port 3001):
+    - Login berhasil dan cookie `raccoon_auth_token` diterima. PASS — MANUALLY VERIFIED.
+    - `GET /api/auth/me` pada sesi baru → HTTP 200. PASS — MANUALLY VERIFIED.
+    - Token fresh membawa klaim `ver = 9`; token stale membawa klaim `ver = 2`.
+    - Stale token dengan `ver = 2` dipakai `POST /api/auth/logout` → HTTP 201. PASS — MANUALLY VERIFIED (request diterima).
+    - Sesi baru dengan `ver = 9` tetap valid setelah stale logout; `GET /api/auth/me` → HTTP 200. PASS — MANUALLY VERIFIED untuk perilaku no-op yang terlihat dari sisi sesi.
+    - Prisma Client berhasil membaca admin dan menunjukkan `Admin.tokenVersion = 9` setelah rangkaian pengujian stale logout (dibaca sebelum logout token aktif). Nilai ini konsisten dengan token fresh `ver = 9`, tetapi **bukan bukti** bahwa nilainya tidak berubah akibat stale logout.
+    - Logout dengan token aktif (`ver = 9`) → HTTP 201. PASS — MANUALLY VERIFIED.
+    - Setelah logout aktif, `GET /api/auth/me` memakai sesi yang sama → HTTP 401. PASS — MANUALLY VERIFIED (revokasi berlaku).
+    - **BELUM diverifikasi:** nilai `Admin.tokenVersion` sebelum stale logout di port 3001 belum diambil, sehingga perbandingan sebelum/sesudah stale logout belum terverifikasi langsung. Jangan mengklaim nilai tidak berubah akibat stale logout.
+    - **BELUM diverifikasi:** kenaikan `tokenVersion` tepat +1 akibat logout aktif belum dibaca langsung (tidak ada pembacaan nilai setelah logout aktif). Yang terverifikasi adalah efek revokasinya, yaitu `401`.
+  - Status: PARTIALLY MANUALLY VERIFIED. Sisa kriteria: pembacaan langsung `Admin.tokenVersion` sebelum stale logout untuk perbandingan sebelum/sesudah, dan pembacaan nilai setelah logout aktif untuk membuktikan kenaikan +1.
+  - **Hasil retest manual sebelumnya (sebelum rebuild): GAGAL, tetapi bukan karena logika source.** Root cause aktual: proses di port 3001 menjalankan `node dist/main` (PID 5320, start 02.44.46) dengan `backend/dist/auth/auth.service.js` hasil build 01.59.34. File dist itu masih berisi logika lama (`if (typeof payload.adminId === 'string')` tanpa cek `ver`). Source `backend/src/auth/auth.service.ts` sudah berisi cek `ver` (mtime 02.31.14), tetapi belum pernah dikompilasi ulang. Restart tidak menolong karena restart hanya menjalankan ulang `dist` yang sama. Status ini sudah tidak berlaku untuk retest terbaru.
+  - Bukti token (hanya klaim, bukan isi token): cookie `stale.txt` membawa `ver=2`, cookie `fresh.txt` membawa `ver=6`, `adminId` sama. Dengan dist lama, logout memakai token `ver=2` tetap menaikkan `tokenVersion` 6 → 7 sehingga token fresh (`ver=6`) langsung `401`. Dengan source saat ini, `ver=2 !== 7` sehingga logout tersebut harus menjadi no-op.
+  - Tindakan operasional yang diminta: `npm run build` di `backend/` lalu restart proses `node dist/main`. Retest terbaru pada port 3001 sudah menunjukkan perilaku yang diharapkan (stale logout tidak mengeluarkan sesi aktif). Build/restart **tidak dijalankan** dalam sesi pembaruan dokumen ini.
+  - Catatan: token dari retest lama sudah tidak valid setelah `tokenVersion` naik. Retest terbaru memakai login baru (`ver=9`).
+  - Batasan desain yang tersisa: `tokenVersion` bersifat global per admin. Dua token hidup yang diterbitkan pada versi yang sama tidak bisa dibedakan; logout dengan salah satunya memang mencabut keduanya. Ini bukan penyebab kegagalan retest lama (`ver` 2 vs 6), tetapi relevan bila nanti dibutuhkan revokasi per-sesi/per-perangkat (perlu `sid` per sesi + tabel/kolom sesi).
 
 - [x] **Task 3.2: Lengkapi `.gitignore` (bukan "hilang")** (IMPLEMENTED — MANUALLY VERIFIED)
   - File: `.gitignore` di root (sudah ada).
@@ -117,6 +139,23 @@ Catatan koreksi terhadap draft awal (hasil verifikasi kode aktual):
     - `/backend/uploads-strix/`
     - `/backend/*_strix.py` — mencakup `poc_*_strix.py`, `verify_*_strix.py`, dan `si_probe_strix.py`.
   - Verifikasi: `git check-ignore -v` mencocokkan semua artefak ke pola di atas; `git status` tidak lagi menampilkannya. PASS.
+
+---
+
+## CATATAN AUDIT H-1 CSRF (di luar tabel task)
+
+Sumber: `temporary/backend-audit.md` (H-1). Status: **VERIFIED (scope terbatas)** — hanya pemeriksaan yang didukung hasil verifikasi manual 19 Oktober 2026. H-1 belum verified penuh dan belum ditutup.
+
+| Pemeriksaan | Hasil | Status |
+| --- | --- | --- |
+| Cookie `raccoon_auth_token` setelah login | `HttpOnly=true`, `SameSite=Strict` | PASS — manual |
+| Cookie `raccoon_csrf` setelah login | `HttpOnly=false`, `SameSite=Strict` | PASS — manual |
+| Properti `csrfToken` pada respons login | ada | Tercatat; baris checklist login lengkap tetap PENDING |
+| `PATCH /api/products/:id` dengan sesi valid + token CSRF salah | HTTP 403, `Invalid or missing CSRF token` | PASS — manual |
+
+Tetap PENDING (belum ada bukti tes pada pembaruan ini): typecheck backend, build backend, typecheck frontend, `POST /api/products` tanpa header CSRF, `PATCH /api/products/:id` dengan token benar, `GET /api/products` tanpa header, login lengkap, logout, upload foto publik, dan alur admin UI.
+
+Catatan: pembaruan ini hanya dokumentasi. Tidak ada build, typecheck, test, atau perubahan kode yang dijalankan. Status H-2 dan temuan lain tidak diubah.
 
 ---
 
@@ -131,8 +170,7 @@ Catatan koreksi terhadap draft awal (hasil verifikasi kode aktual):
 
 ## URUTAN EKSEKUSI TERSISA
 
-1. Task 2.1 (reaper) — menutup disk exhaustion.
-2. Task 3.1 (revokasi logout).
-3. Update `backend/SECURITY.md` setelah semua verifikasi selesai.
+1. Sisa verifikasi manual Task 3.1: ambil nilai `Admin.tokenVersion` sebelum stale logout (bandingkan sebelum/sesudah), lalu baca nilai setelah logout aktif untuk membuktikan kenaikan +1. Perilaku stale logout (no-op) dan logout aktif (sesi berikutnya `401`) sudah MANUALLY VERIFIED pada 19 Oktober 2026.
+2. Update `backend/SECURITY.md` setelah semua verifikasi selesai.
 
 Verifikasi akhir tiap fase: `cd backend && npm run typecheck`, `npm run build`, `npm run test:e2e`.

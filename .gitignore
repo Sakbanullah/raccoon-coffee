@@ -10,6 +10,10 @@ build/
 .env.*
 !.env.example
 
+# Filled-in deployment environment files (templates stay tracked)
+backend/deployment/*.env
+!backend/deployment/*.env.example
+
 # Logs
 *.log
 
@@ -49,6 +53,13 @@ docs/
 
 # AI-generated context
 PROJECT_CONTEXT.md
+
+# Local auth/cookie test artifacts (never commit)
+/backend/fresh-login.json
+/backend/fresh.txt
+/backend/jar.txt
+/backend/login-body.json
+/backend/stale.txt
 
 # Local audit and temporary test files
 /backend/test/

@@ -1,0 +1,86 @@
+# Raccoon Coffee — Nginx site TEMPLATE (one VPS: Next.js + NestJS API)
+#
+# INSTALL ORDER — do not install this file before the certificate exists:
+#   1. install raccoon-nginx-bootstrap.conf.example (HTTP only) and reload,
+#   2. obtain the certificate with Certbot (webroot),
+#   3. install THIS file, then `sudo nginx -t && sudo systemctl reload nginx`.
+# Installing this file first makes `nginx -t` fail because the ssl_certificate
+# files below do not exist yet.
+#
+# TLS: certificates are issued and renewed by Certbot. The paths below are the
+# standard Certbot locations; <domain> must be replaced with the real hostname.
+# Issue the first certificate with, for example:
+#   sudo certbot certonly --webroot -w /var/www/html -d <domain>
+# Do not commit a certificate, a key, or a real domain into this file.
+#
+# Routing:
+#   /api/  -> NestJS on 127.0.0.1:3001
+#   /      -> Next.js on 127.0.0.1:3000
+# The backend must run with TRUST_PROXY=1 (one Nginx hop) for rate limiting and
+# client IPs; both services bind on loopback and are never exposed directly.
+
+# --- HTTP: ACME challenge + redirect to HTTPS --------------------------------
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name <domain>;
+
+    # Certbot webroot challenge must stay reachable over plain HTTP.
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# --- HTTPS: reverse proxy ----------------------------------------------------
+
+server {
+    # `listen ... http2` works on Nginx 1.18–1.24 (Ubuntu 22.04/24.04). On
+    # Nginx 1.25+ it logs a deprecation warning; replace with `http2 on;`.
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name <domain>;
+
+    # Certbot-managed files (symlinks into /etc/letsencrypt/archive/).
+    ssl_certificate     /etc/letsencrypt/live/<domain>/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/<domain>/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 1d;
+
+    # Optional, only after HTTPS is confirmed working on the real domain:
+    # add_header Strict-Transport-Security "max-age=31536000" always;
+
+    # API uploads are capped at 5 MB; 6 MB leaves room for multipart overhead.
+    client_max_body_size 6m;
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_read_timeout 60s;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header Upgrade           $http_upgrade;
+        proxy_set_header Connection        "upgrade";
+        proxy_read_timeout 60s;
+    }
+}

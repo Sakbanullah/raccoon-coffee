@@ -1,0 +1,56 @@
+# Raccoon Coffee frontend — systemd unit TEMPLATE (Next.js)
+#
+# Adapt the placeholders marked with <...>, then install:
+#   sudo cp raccoon-web.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now raccoon-web
+#
+# Notes:
+#  - `next start` serves the production build in <deploy-path>/frontend/.next.
+#    Run `npm ci`/`npm run build` as the deploy user BEFORE enabling this unit.
+#  - Node must be reachable through an absolute path; systemd does not use the
+#    login shell PATH.
+#  - `-H 127.0.0.1` binds Next.js to loopback explicitly; the firewall is only
+#    defense in depth. Keep the port in sync with the Nginx site template.
+#  - User= is the RUNTIME service user; `npm ci`/`npm run build` run as the
+#    separate deploy user (see README.md).
+#  - BACKEND_URL is read at BUILD time by the `/api/*` rewrite in next.config.js
+#    (default http://127.0.0.1:3001) and at RUNTIME by server-side fetches
+#    (frontend/lib/site-images.ts). Set it in the build command; the runtime
+#    EnvironmentFile only affects server-side fetches, not the baked rewrite.
+
+[Unit]
+Description=Raccoon Coffee frontend (Next.js)
+After=network-online.target raccoon-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=<service-user>
+Group=<service-group>
+WorkingDirectory=<deploy-path>/frontend
+
+Environment=NODE_ENV=production
+
+# Optional overrides (e.g. BACKEND_URL=http://127.0.0.1:3001). Root-owned,
+# chmod 640, outside the repository. Settings here win over Environment=.
+EnvironmentFile=-/etc/raccoon/raccoon-web.env
+
+ExecStart=<node-path> node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3000
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+
+# Defense in depth. The Next.js image optimizer writes to .next/cache, so that
+# subdirectory stays writable while the rest of the checkout is read-only.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ReadOnlyPaths=<deploy-path>
+ReadWritePaths=<deploy-path>/frontend/.next/cache
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -52,8 +52,11 @@ async function bootstrap(): Promise<void> {
     }),
   );
   const port = process.env.PORT?.trim() ? Number(process.env.PORT.trim()) : DEFAULT_PORT;
-  await app.listen(port);
-  console.log('Raccoon Coffee backend running on port', port);
+  // Bind loopback by default: Nginx is the only intended client on a single-VPS
+  // deployment. Set HOST only when the API must be reached from another host.
+  const host = process.env.HOST?.trim() || '127.0.0.1';
+  await app.listen(port, host);
+  console.log(`Raccoon Coffee backend running on ${host}:${port}`);
 
   // Graceful shutdown (M-13): the service owns SIGINT/SIGTERM. register() only
   // wires signal handling; shutdown starts when a signal actually arrives.

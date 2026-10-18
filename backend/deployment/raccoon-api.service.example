@@ -10,11 +10,19 @@
 #    path in the Environment= line below or use an ExecStart absolute path.
 #  - The deploy directory is assumed to be a plain `npm run build` checkout
 #    (dist/main.js); no Docker, no bundler changes.
+#  - User= is the RUNTIME service user. It only needs read/execute on the
+#    checkout; install, build, migration, prune and admin bootstrap run as the
+#    separate deploy user (see README.md).
 
 [Unit]
 Description=Raccoon Coffee backend (NestJS API)
 After=network-online.target mysql.service mariadb.service
 Wants=network-online.target
+
+# Stop retrying a crash loop after 5 starts in 60s. `systemctl reset-failed
+# raccoon-api` clears the counter after the operator fixes the configuration.
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -26,15 +34,20 @@ WorkingDirectory=<deploy-path>/backend
 # Contains JWT_SECRET and DATABASE_URL and must never be committed.
 EnvironmentFile=/etc/raccoon/raccoon-api.env
 
+# Binds 127.0.0.1 by default (HOST unset); only Nginx reaches it.
 ExecStart=<node-path> dist/main.js
 Restart=on-failure
 RestartSec=5
+# The app drains in-flight requests and exits within ~10s after SIGTERM.
+# Leave headroom so systemd never SIGKILLs before that drain finishes.
+TimeoutStopSec=30
 
 # Defense in depth (kept conservative so the app still works):
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectHome=read-only
-# Allow writing only inside the upload directory:
+# Allow writing only inside the upload directory. The directory must exist
+# before start: systemd refuses to set up ReadWritePaths for a missing path.
 ReadOnlyPaths=<deploy-path>
 ReadWritePaths=<absolute-upload-directory>
 

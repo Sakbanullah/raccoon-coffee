@@ -14,7 +14,7 @@ export type SiteImageSection = "hero" | "brand_story" | "atmosphere";
  */
 export async function getSiteImages(section: SiteImageSection): Promise<SiteImage[]> {
   try {
-    const backend = process.env.BACKEND_URL ?? "http://localhost:3001";
+    const backend = process.env.BACKEND_URL ?? "http://127.0.0.1:3001";
     const res = await fetch(`${backend}/api/site-images?section=${section}`, { cache: "no-store" });
     if (!res.ok) return [];
     const json = await res.json();

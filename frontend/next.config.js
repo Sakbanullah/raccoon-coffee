@@ -10,10 +10,13 @@ const nextConfig = {
     minimumCacheTTL: 31536000,
   },
   async rewrites() {
+    // 127.0.0.1 (not "localhost") matches the API's default bind address and
+    // avoids a resolver picking ::1 while the backend listens on IPv4 loopback.
+    const backend = process.env.BACKEND_URL ?? 'http://127.0.0.1:3001';
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
+        destination: `${backend}/api/:path*`,
       },
     ];
   },

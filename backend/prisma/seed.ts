@@ -1,6 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
+// This seed writes demo content and is not a production bootstrap path.
+// Refuse to run it against a production environment by mistake; use
+// `npm run admin:bootstrap` for the first production admin instead.
+if (process.env.NODE_ENV === 'production') {
+  console.error(
+    'Refusing to run the demo seed with NODE_ENV=production. Use `npm run admin:bootstrap` for the first production admin.',
+  );
+  process.exit(1);
+}
+
 const prisma = new PrismaClient();
 
 // First-admin bootstrap.
