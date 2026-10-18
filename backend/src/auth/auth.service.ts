@@ -4,6 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 
+// Fixed bcrypt hash (cost 10, same as seed) compared against when the admin
+// does not exist, so unknown-email logins take the same time as wrong-password.
+const DUMMY_HASH = '$2b$10$VhUphy6Sj9mTEaFUMXdpe.Hxe1xEb/NYUFqVSxc9rysnatkaFQL5y';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -16,12 +20,8 @@ export class AuthService {
       where: { email },
     });
     
-    if (!admin) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    const isMatch = await bcrypt.compare(pass, admin.passwordHash);
-    if (!isMatch) {
+    const isMatch = await bcrypt.compare(pass, admin?.passwordHash ?? DUMMY_HASH);
+    if (!admin || !isMatch) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
