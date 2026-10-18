@@ -113,6 +113,55 @@ function canonicalExtensionForMime(mime: string): string {
 const STAGING_FILENAME = /^(\d+-\d+)\.upload$/;
 
 /**
+ * Staging files owned by uploads that are still in flight. The reaper must never
+ * delete one of these: a slow or paused client can leave an old mtime on a file
+ * that the request still owns.
+ *
+ * There is deliberately no time-based expiry: an upload may legitimately take
+ * longer than the reaper's age threshold, and expiring its marker would let the
+ * reaper delete a file the request is still using. Entries are released when the
+ * request finishes, fails, or aborts (response `close`), so none leak.
+ */
+const activeStagingFiles = new Set<string>();
+
+/** Mark a staging file as owned by an in-flight upload. */
+export function registerStagingFile(path: string): void {
+  activeStagingFiles.add(resolve(path));
+}
+
+/** Drop the in-flight marker once the upload finished (stored or discarded). */
+export function releaseStagingFile(path: string): void {
+  activeStagingFiles.delete(resolve(path));
+}
+
+/** True while the staging file belongs to a request that may still be using it. */
+export function isStagingFileActive(path: string): boolean {
+  return activeStagingFiles.has(resolve(path));
+}
+
+/**
+ * Register a staging file and release it when the response closes. `close` fires
+ * after a normal response and when the client aborts, so an aborted upload does
+ * not pin its staging file.
+ *
+ * A response that is already destroyed will never emit `close` again, so the
+ * marker is released immediately instead of pinning the file forever.
+ */
+export function trackStagingFile(
+  path: string,
+  response?: { once(event: 'close', listener: () => void): unknown; destroyed?: boolean },
+): void {
+  registerStagingFile(path);
+  if (!response) return;
+  if (response.destroyed) {
+    releaseStagingFile(path);
+    return;
+  }
+  response.once('close', () => releaseStagingFile(path));
+}
+
+
+/**
  * Allowlist for the generated `<prefix>-<timestamp>-<random>.<ext>` filenames.
  * Anything else is rejected, which also blocks path traversal. It is also the
  * single source of truth for the extensions an upload URL may carry, so the
@@ -132,6 +181,7 @@ export async function discardStoredUpload(file: Express.Multer.File | undefined)
   if (!file) return;
   const target = file.path || (file.filename ? join(resolve(UPLOAD_DIR), file.filename) : undefined);
   if (!target) return;
+  releaseStagingFile(target);
   const { unlink } = await import('fs/promises');
   await unlink(target).catch(() => undefined);
 }
@@ -225,6 +275,9 @@ export function verifyUploadedImage(
     // The rename failed (e.g. the staged file vanished): nothing usable is left,
     // so report a controlled error instead of registering a broken URL.
     throw new BadRequestException('The uploaded image could not be stored.');
+  } finally {
+    // The upload no longer owns a staging name, so the reaper may take it.
+    releaseStagingFile(stagedPath);
   }
 
   file.filename = canonicalFilename;
@@ -310,7 +363,12 @@ export function imageUploadInterceptor(prefix: string) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
         // Staging extension only: `verifyUploadedImage` replaces it with the
         // canonical extension for the content it actually detected.
-        callback(null, `${prefix}-${uniqueSuffix}.upload`);
+        const stagedName = `${prefix}-${uniqueSuffix}.upload`;
+        // Claim the file before it is written so the reaper cannot delete an
+        // upload that is still in flight. The response `close` handler releases
+        // the claim on success, failure, and client abort.
+        trackStagingFile(join(uploadDir, stagedName), req.res);
+        callback(null, stagedName);
       },
     }),
     fileFilter: (req, file, callback) => {

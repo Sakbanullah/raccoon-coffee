@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { IMAGE_STORAGE, LocalDiskImageStorage } from './image-storage.service';
 import { ImageCleanupService } from './image-cleanup.service';
+import { StagingReaperService } from './staging-reaper.service';
 
 export { IMAGE_STORAGE };
 
@@ -16,6 +17,7 @@ export { IMAGE_STORAGE };
     LocalDiskImageStorage,
     { provide: IMAGE_STORAGE, useExisting: LocalDiskImageStorage },
     ImageCleanupService,
+    StagingReaperService,
   ],
   exports: [IMAGE_STORAGE, LocalDiskImageStorage, ImageCleanupService],
 })

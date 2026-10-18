@@ -62,14 +62,26 @@ export class AuthService {
    * Best-effort revocation for the token in `raccoon_auth_token`. Used by
    * logout, which must not fail on a missing/expired/forged token — in those
    * cases there is nothing worth revoking. The token is never logged.
+   *
+   * A token whose `ver` no longer matches `Admin.tokenVersion` was already
+   * revoked by an earlier logout and must not bump the version again, otherwise
+   * anyone holding a captured stale token could keep invalidating the admin's
+   * live sessions until the token expires.
    */
   async revokeByToken(token: string | undefined): Promise<void> {
     if (!token) return;
     try {
-      const payload = await this.jwtService.verifyAsync<{ adminId?: string }>(token);
-      if (typeof payload.adminId === 'string') {
-        await this.revokeSessions(payload.adminId);
-      }
+      const payload = await this.jwtService.verifyAsync<{ adminId?: string; ver?: number }>(token);
+      if (typeof payload.adminId !== 'string' || !Number.isInteger(payload.ver)) return;
+
+      // Same rule as JwtAuthGuard: signature/expiry alone is not enough.
+      const admin = await this.prisma.admin.findUnique({
+        where: { adminId: payload.adminId },
+        select: { tokenVersion: true },
+      });
+      if (!admin || payload.ver !== admin.tokenVersion) return;
+
+      await this.revokeSessions(payload.adminId);
     } catch {
       // Invalid/expired token: nothing to revoke.
     }

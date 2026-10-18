@@ -1,5 +1,4 @@
 import * as path from 'path';
-import * as dotenv from 'dotenv';
 
 /**
  * Minimum acceptable length of the JWT signing secret (in characters).
@@ -26,20 +25,30 @@ const FORBIDDEN_JWT_SECRETS: readonly string[] = [
   'password',
 ];
 
-// Load backend/.env for local runs ONLY when invoked directly (ts-node / nest
-// start) from the backend directory.
+// Load backend/.env for local runs ONLY, and only outside production.
 //
-// This deliberately does NOT run in production: with `npm run start:prod`
-// (cwd = backend/) this module resolves to dist/auth/constants.js, giving
-// dist/.env — which does not exist, so production is unaffected. Conversely a
-// NODE_ENV=production smoke test run from source (ts-node src/main.ts) *would*
-// resolve to src/auth/.env (also absent), so a stale backend/.env can never
-// silently supply a production secret during verification either way.
+// Production uses the environment supplied by systemd (EnvironmentFile), so no
+// .env file is read there. The require below is deliberately lazy: dotenv is a
+// devDependency and is removed on the server by `npm prune --omit=dev`, so the
+// production build must never resolve it at startup.
 //
 // dotenv never overrides variables that are already set, so the real process
 // environment (systemd EnvironmentFile, Docker env, shell) always wins.
 if (process.env.NODE_ENV !== 'production') {
-  dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const dotenv = require('dotenv') as typeof import('dotenv');
+    dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw err;
+    // dotenv is a devDependency and is absent after `npm prune --omit=dev`.
+    // Continue so config validation reports the real problem (e.g. missing
+    // JWT_SECRET) instead of an opaque module-resolution crash.
+    console.warn(
+      'dotenv is not installed: backend/.env was not loaded. ' +
+        'Set JWT_SECRET and DATABASE_URL in the process environment.',
+    );
+  }
 }
 
 export interface JwtSecretResolution {
