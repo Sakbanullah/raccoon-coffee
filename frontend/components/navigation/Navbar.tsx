@@ -37,10 +37,10 @@ export default function Navbar() {
   return (
     <header
       className={
-        "fixed inset-x-0 top-0 z-50 border-b transition-all duration-300 " +
+        "fixed inset-x-0 top-0 z-50 transition-all duration-300 " +
         (scrolled
-          ? "border-cream-dark/80 bg-cream/95 backdrop-blur-md supports-[backdrop-filter]:bg-cream/85 shadow-sm"
-          : "border-transparent bg-gradient-to-b from-forest-deep/90 via-forest-deep/30 to-transparent")
+          ? "bg-cream/95 backdrop-blur-md supports-[backdrop-filter]:bg-cream/85 shadow-sm"
+          : "bg-gradient-to-b from-forest-deep/90 via-forest-deep/30 to-transparent")
       }
     >
       <div className="section-shell flex h-14 items-center justify-between gap-6 sm:h-16">
