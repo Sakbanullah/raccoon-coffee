@@ -202,6 +202,19 @@ export default function FeaturedMenu() {
                   );
                 })}
               </ul>
+              {/* The strip hides its scrollbar, so without a cue the eight
+                  categories look like the whole list. Mobile only: at sm+ the
+                  pills wrap instead of scrolling. */}
+              <p
+                aria-hidden="true"
+                className="mt-2 flex items-center justify-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.18em] text-ink/45 sm:hidden"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                  <path d="M9 6 3 12l6 6" />
+                  <path d="M15 6l6 6-6 6" />
+                </svg>
+                Geser untuk lihat semua
+              </p>
             </nav>
           )}
 
