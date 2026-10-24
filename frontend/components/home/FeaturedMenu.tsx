@@ -148,7 +148,7 @@ export default function FeaturedMenu() {
               transition={{ duration: 0.6, ease: "easeOut" }}
               className="eyebrow text-coffee"
             >
-              <span aria-hidden="true" className="mr-2 text-gold">•</span>
+              <span aria-hidden="true" className="mr-2 text-gold"></span>
               Today's Favorites
             </motion.p>
             <motion.h2

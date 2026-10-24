@@ -31,7 +31,7 @@ export default function RitualArc() {
     <section className="bg-cream py-20 text-ink sm:py-24">
       <div className="section-shell">
         <p className="eyebrow text-center">
-          <span aria-hidden="true" className="mr-2 text-gold">•</span>
+          <span aria-hidden="true" className="mr-2 text-gold"></span>
           Ritual Kecil
         </p>
         <h2 className="mx-auto mt-4 max-w-xl text-center font-display text-3xl leading-snug sm:text-4xl">

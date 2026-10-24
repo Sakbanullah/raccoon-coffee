@@ -25,7 +25,7 @@ export default function Atmosphere({ images: siteImages }: { images: SiteImage[]
       <div className="section-shell">
         <Reveal>
           <p className="eyebrow text-center text-coffee">
-            <span aria-hidden="true" className="mr-2 text-gold">•</span>
+            <span aria-hidden="true" className="mr-2 text-gold"></span>
             Atmosphere
           </p>
           <h2 className="mx-auto mt-4 max-w-xl text-center font-display text-3xl leading-snug text-ink sm:text-4xl">

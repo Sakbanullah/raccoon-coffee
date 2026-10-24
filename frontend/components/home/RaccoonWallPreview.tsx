@@ -51,7 +51,7 @@ export default function RaccoonWallPreview() {
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="eyebrow text-coffee">
-                <span aria-hidden="true" className="mr-2 text-gold">•</span>
+                <span aria-hidden="true" className="mr-2 text-gold"></span>
                 Raccoon Wall
               </p>
               <h2 className="mt-4 max-w-2xl font-display text-3xl leading-[1.05] text-ink sm:text-4xl md:text-5xl">

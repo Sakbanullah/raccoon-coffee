@@ -13,7 +13,7 @@ export default function BrandIntro({ images }: { images: SiteImage[] }) {
         {/* Left: Editorial story column */}
         <Reveal className="md:col-span-7">
           <p className="eyebrow text-gold mb-3">
-            <span aria-hidden="true" className="mr-2">✦</span>
+            <span aria-hidden="true" className="mr-2"></span>
             Cerita Kami
           </p>
           <h2 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.04] text-ink">
