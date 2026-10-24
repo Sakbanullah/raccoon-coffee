@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Allura } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 // Signature script for the hero wordmark only; self-hosted, single weight.
-const allura = Allura({
-  subsets: ["latin"],
+// Local file (not next/font/google) so a Google Fonts fetch failure can never
+// silently swap the wordmark to the cursive/Arial fallback.
+const allura = localFont({
+  src: "./fonts/allura-latin-400.woff2",
   weight: "400",
   variable: "--font-script",
   display: "swap",

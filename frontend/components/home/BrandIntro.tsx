@@ -60,6 +60,9 @@ export default function BrandIntro({ images }: { images: SiteImage[] }) {
                 src={secondary?.imageUrl ?? "/images/raccoon/atmosphere/barista.jpg"}
                 alt={secondary?.altText || "Barista at Raccoon"}
                 fill
+                // Card is w-56 (224px) and only rendered from sm up; the default
+                // 100vw made the optimizer fetch a 1920px variant for this slot.
+                sizes="224px"
                 className="object-cover"
               />
             </div>

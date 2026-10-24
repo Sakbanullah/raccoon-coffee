@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 interface ExpandableGalleryProps {
@@ -89,12 +90,12 @@ const ExpandableGallery: React.FC<ExpandableGalleryProps> = ({
               }
             }}
           >
-            <img
+            <Image
               src={image}
               alt={`Gallery image ${index + 1}`}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
+              fill
+              sizes="(max-width: 639px) 78vw, (max-width: 1023px) 45vw, 500px"
+              className="object-cover"
             />
             <motion.div
               className="absolute inset-0 bg-black"

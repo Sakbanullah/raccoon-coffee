@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import type * as React from "react";
+import Image from "next/image";
 import "./polaroid-line-carousel.css";
 
 export type LandPalette = "dawn" | "alpine" | "dusk" | "mist"
@@ -447,7 +448,7 @@ export default function PolaroidLineCarousel({
       {slides.map((sl, i) => (
         <div key={i} className="pl-card" data-i={i} data-on={i === active ? "1" : "0"} ref={(el) => void (cards.current[i] = el)} aria-hidden={i === active ? undefined : true}>
           <div className="pl-print">
-            <div className="pl-shot">{srcs[i] ? <img key={srcs[i]} src={srcs[i]} alt={sl.alt || sl.title || ""} draggable={false} loading="lazy" decoding="async" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : null}</div>
+            <div className="pl-shot">{srcs[i] ? <Image key={srcs[i]} src={srcs[i]} alt={sl.alt || sl.title || ""} fill sizes="(max-width: 640px) 42vw, 300px" draggable={false} loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : null}</div>
             <div className="pl-note">{sl.title || ""}</div>
           </div>
           <div className="pl-peg" />
